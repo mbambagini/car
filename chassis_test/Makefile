@@ -1,4 +1,4 @@
-PROJECT = car_tester
+PROJECT = chassis_test
 
 CAN_FLAGS = -DNET_TX_STS_BODY \
             -DNET_TX_STS_DIAG \

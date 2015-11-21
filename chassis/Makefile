@@ -1,4 +1,4 @@
-PROJECT = car_chassis
+PROJECT = chassis
 
 CAN_FLAGS = -DNET_TX_CMD_BODY \
             -DNET_TX_CMD_ENGINE \
