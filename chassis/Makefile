@@ -1,9 +1,11 @@
-CAN_FLAGS = -DNET_TX_STS_BODY \
-            -DNET_TX_STS_DIAG \
-            -DNET_RX_CMD_BODY \
-            -DNET_RX_CMD_ENGINE \
-            -DNET_RX_CMD_TIME \
-            -DNET_RX_CMD_DIAG
+PROJECT = car_chassis
+
+CAN_FLAGS = -DNET_TX_CMD_BODY \
+            -DNET_TX_CMD_ENGINE \
+            -DNET_TX_CMD_TIME \
+            -DNET_TX_CMD_DIAG \
+            -DNET_RX_STS_BODY \
+            -DNET_RX_STS_DIAG
 TASK_FLAGS = -DCLOCK_THREAD_PERIOD=1000 \
              -DENGINE_THREAD_PERIOD=250 \
              -DBODY_THREAD_PERIOD=500 \
@@ -11,7 +13,7 @@ TASK_FLAGS = -DCLOCK_THREAD_PERIOD=1000 \
              -DCAN_THREAD_PERIOD=100
 
 GCC_BIN = /usr/bin/
-PROJECT = car_chassis
+
 OBJECTS = ../source/can.o \
           ./src/body.o \
           ./src/clock.o \
@@ -97,27 +99,25 @@ all: $(PROJECT).bin $(PROJECT).hex size
 
 
 clean:
-	rm -f $(PROJECT).bin $(PROJECT).elf $(PROJECT).hex $(PROJECT).map $(PROJECT).lst $(OBJECTS) $(DEPS)
+	@rm -f $(PROJECT).bin $(PROJECT).elf $(PROJECT).hex $(PROJECT).map $(PROJECT).lst $(OBJECTS) $(DEPS)
 
 
 .asm.o:
-	$(CC) $(CPU) -c -x assembler-with-cpp -o $@ $<
+	@$(CC) $(CPU) -c -x assembler-with-cpp -o $@ $<
 .s.o:
-	$(CC) $(CPU) -c -x assembler-with-cpp -o $@ $<
+	@$(CC) $(CPU) -c -x assembler-with-cpp -o $@ $<
 .S.o:
-	$(CC) $(CPU) -c -x assembler-with-cpp -o $@ $<
+	@$(CC) $(CPU) -c -x assembler-with-cpp -o $@ $<
 
 .c.o:
-	$(CC)  $(CC_FLAGS) $(CC_SYMBOLS) $(CAN_FLAGS) $(TASK_FLAGS) -std=gnu99   $(INCLUDE_PATHS) -o $@ $<
+	@$(CC)  $(CC_FLAGS) $(CC_SYMBOLS) $(CAN_FLAGS) $(TASK_FLAGS) -std=gnu99   $(INCLUDE_PATHS) -o $@ $<
 
 .cpp.o:
-	$(CPP) $(CC_FLAGS) $(CC_SYMBOLS) $(CAN_FLAGS) $(TASK_FLAGS) -std=gnu++98 -fno-rtti $(INCLUDE_PATHS) -o $@ $<
-
-
+	@$(CPP) $(CC_FLAGS) $(CC_SYMBOLS) $(CAN_FLAGS) $(TASK_FLAGS) -std=gnu++98 -fno-rtti $(INCLUDE_PATHS) -o $@ $<
 
 
 $(PROJECT).elf: $(OBJECTS) $(SYS_OBJECTS)
-	$(LD) $(LD_FLAGS) -T$(LINKER_SCRIPT) $(LIBRARY_PATHS) -o $@ $^ $(LIBRARIES) $(LD_SYS_LIBS) $(LIBRARIES) $(LD_SYS_LIBS)
+	@$(LD) $(LD_FLAGS) -T$(LINKER_SCRIPT) $(LIBRARY_PATHS) -o $@ $^ $(LIBRARIES) $(LD_SYS_LIBS) $(LIBRARIES) $(LD_SYS_LIBS)
 
 	@echo ""
 	@echo "*****"
@@ -140,7 +140,6 @@ lst: $(PROJECT).lst
 size: $(PROJECT).elf
 	$(SIZE) $(PROJECT).elf
 
-DEPS = $(OBJECTS:.o=.d) $(SYS_OBJECTS:.o=.d)
+DEPS = $(OBJECTS:.o=.d)
 -include $(DEPS)
-
 
