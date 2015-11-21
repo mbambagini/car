@@ -12,27 +12,7 @@ TASK_FLAGS = -DCLOCK_THREAD_PERIOD=1000 \
 
 GCC_BIN = /usr/bin/
 PROJECT = car_chassis
-OBJECTS = ../lib/mbed-rtos/rtx/TARGET_CORTEX_M/TARGET_M3/TOOLCHAIN_GCC/HAL_CM3.o \
-          ../lib/mbed-rtos/rtx/TARGET_CORTEX_M/TARGET_M3/TOOLCHAIN_GCC/SVC_Table.o \
-          ../lib/mbed-rtos/rtx/TARGET_CORTEX_M/HAL_CM.o \
-          ../lib/mbed-rtos/rtx/TARGET_CORTEX_M/RTX_Conf_CM.o \
-          ../lib/mbed-rtos/rtx/TARGET_CORTEX_M/rt_CMSIS.o \
-          ../lib/mbed-rtos/rtx/TARGET_CORTEX_M/rt_Event.o \
-          ../lib/mbed-rtos/rtx/TARGET_CORTEX_M/rt_List.o \
-          ../lib/mbed-rtos/rtx/TARGET_CORTEX_M/rt_Mailbox.o \
-          ../lib/mbed-rtos/rtx/TARGET_CORTEX_M/rt_MemBox.o \
-          ../lib/mbed-rtos/rtx/TARGET_CORTEX_M/rt_Mutex.o \
-          ../lib/mbed-rtos/rtx/TARGET_CORTEX_M/rt_Robin.o \
-          ../lib/mbed-rtos/rtx/TARGET_CORTEX_M/rt_Semaphore.o \
-          ../lib/mbed-rtos/rtx/TARGET_CORTEX_M/rt_System.o \
-          ../lib/mbed-rtos/rtx/TARGET_CORTEX_M/rt_Task.o \
-          ../lib/mbed-rtos/rtx/TARGET_CORTEX_M/rt_Time.o \
-          ../lib/mbed-rtos/rtos/Mutex.o \
-          ../lib/mbed-rtos/rtos/RtosTimer.o \
-          ../lib/mbed-rtos/rtos/Semaphore.o \
-          ../lib/mbed-rtos/rtos/Thread.o \
-          ../lib/Servo/Servo.o \
-          ../source/can.o \
+OBJECTS = ../source/can.o \
           ./src/body.o \
           ./src/clock.o \
           ./src/diag.o \
@@ -44,7 +24,27 @@ SYS_OBJECTS = ../lib/mbed/TARGET_LPC1768/TOOLCHAIN_GCC_ARM/board.o \
               ../lib/mbed/TARGET_LPC1768/TOOLCHAIN_GCC_ARM/cmsis_nvic.o \
               ../lib/mbed/TARGET_LPC1768/TOOLCHAIN_GCC_ARM/retarget.o \
               ../lib/mbed/TARGET_LPC1768/TOOLCHAIN_GCC_ARM/startup_LPC17xx.o \
-              ../lib/mbed/TARGET_LPC1768/TOOLCHAIN_GCC_ARM/system_LPC17xx.o
+              ../lib/mbed/TARGET_LPC1768/TOOLCHAIN_GCC_ARM/system_LPC17xx.o \
+              ../lib/mbed-rtos/rtx/TARGET_CORTEX_M/TARGET_M3/TOOLCHAIN_GCC/HAL_CM3.o \
+              ../lib/mbed-rtos/rtx/TARGET_CORTEX_M/TARGET_M3/TOOLCHAIN_GCC/SVC_Table.o \
+              ../lib/mbed-rtos/rtx/TARGET_CORTEX_M/HAL_CM.o \
+              ../lib/mbed-rtos/rtx/TARGET_CORTEX_M/RTX_Conf_CM.o \
+              ../lib/mbed-rtos/rtx/TARGET_CORTEX_M/rt_CMSIS.o \
+              ../lib/mbed-rtos/rtx/TARGET_CORTEX_M/rt_Event.o \
+              ../lib/mbed-rtos/rtx/TARGET_CORTEX_M/rt_List.o \
+              ../lib/mbed-rtos/rtx/TARGET_CORTEX_M/rt_Mailbox.o \
+              ../lib/mbed-rtos/rtx/TARGET_CORTEX_M/rt_MemBox.o \
+              ../lib/mbed-rtos/rtx/TARGET_CORTEX_M/rt_Mutex.o \
+              ../lib/mbed-rtos/rtx/TARGET_CORTEX_M/rt_Robin.o \
+              ../lib/mbed-rtos/rtx/TARGET_CORTEX_M/rt_Semaphore.o \
+              ../lib/mbed-rtos/rtx/TARGET_CORTEX_M/rt_System.o \
+              ../lib/mbed-rtos/rtx/TARGET_CORTEX_M/rt_Task.o \
+              ../lib/mbed-rtos/rtx/TARGET_CORTEX_M/rt_Time.o \
+              ../lib/mbed-rtos/rtos/Mutex.o \
+              ../lib/mbed-rtos/rtos/RtosTimer.o \
+              ../lib/mbed-rtos/rtos/Semaphore.o \
+              ../lib/mbed-rtos/rtos/Thread.o \
+              ../lib/Servo/Servo.o
 INCLUDE_PATHS = -I. -I./inc -I../include -I../lib/Servo -I../lib/mbed-rtos \
                 -I../lib/mbed-rtos/rtos -I../lib/mbed-rtos/rtx \
                 -I../lib/mbed-rtos/rtx/TARGET_CORTEX_M \

@@ -1,0 +1,17 @@
+*.py[cod]
+
+# C extensions
+*.o
+*.so
+*.d
+
+# binary
+*.bin
+*.elf
+*.hex
+*.map
+
+# vim swap files
+*.swp
+*~
+
