@@ -19,6 +19,9 @@ OBJECTS = ./mbed-rtos/rtx/TARGET_CORTEX_M/TARGET_M3/TOOLCHAIN_GCC/HAL_CM3.o \
           ./mbed-rtos/rtos/Semaphore.o \
           ./mbed-rtos/rtos/Thread.o \
           ./Servo/Servo.o \
+          ./lib/AndroidAccessory/AndroidAccessory.o \
+          ./lib/AndroidAccessory/USBHost/USBHost.o \
+          ./lib/AndroidAccessory/USBHost/USBHost_log.o
 
 INCLUDE_PATHS = -I./Servo -I./mbed-rtos -I./mbed-rtos/rtos -I./mbed-rtos/rtx \
                 -I./mbed-rtos/rtx/TARGET_CORTEX_M \
@@ -28,7 +31,11 @@ INCLUDE_PATHS = -I./Servo -I./mbed-rtos -I./mbed-rtos/rtos -I./mbed-rtos/rtx \
                 -I./mbed/TARGET_LPC1768/TARGET_NXP \
                 -I./mbed/TARGET_LPC1768/TARGET_NXP/TARGET_LPC176X \
                 -I./mbed/TARGET_LPC1768/TARGET_NXP/TARGET_LPC176X/TARGET_MBED_LPC1768 \
-                -I./mbed/TARGET_LPC1768/TOOLCHAIN_GCC_ARM 
+                -I./mbed/TARGET_LPC1768/TOOLCHAIN_GCC_ARM \
+                -I./AndroidAccessory/AndroidAccessory.o \
+                -I./AndroidAccessory/USBHost/USBHost.o \
+                -I./AndroidAccessory/USBHost/USBHost_log.o
+
 LIBRARY_PATHS = -L./mbed/TARGET_LPC1768/TOOLCHAIN_GCC_ARM 
 LIBRARIES = -lmbed 
 LINKER_SCRIPT = ./mbed/TARGET_LPC1768/TOOLCHAIN_GCC_ARM/LPC1768.ld

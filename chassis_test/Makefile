@@ -80,7 +80,7 @@ all: $(PROJECT).bin $(PROJECT).hex size
 
 
 clean:
-	@rm -f $(PROJECT).bin $(PROJECT).elf $(PROJECT).hex $(PROJECT).map $(PROJECT).lst $(OBJECTS) $(DEPS)
+	@rm -f $(PROJECT).bin $(PROJECT).elf $(PROJECT).hex $(PROJECT).map $(PROJECT).lst $(OBJECTS) compile.cmp $(DEPS)
 
 
 .asm.o:

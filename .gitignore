@@ -15,3 +15,5 @@
 *.swp
 *~
 
+# compile
+compile.cmp
