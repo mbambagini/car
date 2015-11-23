@@ -22,31 +22,6 @@ OBJECTS = ../source/can.o \
           ./src/led.o \
           ./main.o
 
-SYS_OBJECTS = ../lib/mbed/TARGET_LPC1768/TOOLCHAIN_GCC_ARM/board.o \
-              ../lib/mbed/TARGET_LPC1768/TOOLCHAIN_GCC_ARM/cmsis_nvic.o \
-              ../lib/mbed/TARGET_LPC1768/TOOLCHAIN_GCC_ARM/retarget.o \
-              ../lib/mbed/TARGET_LPC1768/TOOLCHAIN_GCC_ARM/startup_LPC17xx.o \
-              ../lib/mbed/TARGET_LPC1768/TOOLCHAIN_GCC_ARM/system_LPC17xx.o \
-              ../lib/mbed-rtos/rtx/TARGET_CORTEX_M/TARGET_M3/TOOLCHAIN_GCC/HAL_CM3.o \
-              ../lib/mbed-rtos/rtx/TARGET_CORTEX_M/TARGET_M3/TOOLCHAIN_GCC/SVC_Table.o \
-              ../lib/mbed-rtos/rtx/TARGET_CORTEX_M/HAL_CM.o \
-              ../lib/mbed-rtos/rtx/TARGET_CORTEX_M/RTX_Conf_CM.o \
-              ../lib/mbed-rtos/rtx/TARGET_CORTEX_M/rt_CMSIS.o \
-              ../lib/mbed-rtos/rtx/TARGET_CORTEX_M/rt_Event.o \
-              ../lib/mbed-rtos/rtx/TARGET_CORTEX_M/rt_List.o \
-              ../lib/mbed-rtos/rtx/TARGET_CORTEX_M/rt_Mailbox.o \
-              ../lib/mbed-rtos/rtx/TARGET_CORTEX_M/rt_MemBox.o \
-              ../lib/mbed-rtos/rtx/TARGET_CORTEX_M/rt_Mutex.o \
-              ../lib/mbed-rtos/rtx/TARGET_CORTEX_M/rt_Robin.o \
-              ../lib/mbed-rtos/rtx/TARGET_CORTEX_M/rt_Semaphore.o \
-              ../lib/mbed-rtos/rtx/TARGET_CORTEX_M/rt_System.o \
-              ../lib/mbed-rtos/rtx/TARGET_CORTEX_M/rt_Task.o \
-              ../lib/mbed-rtos/rtx/TARGET_CORTEX_M/rt_Time.o \
-              ../lib/mbed-rtos/rtos/Mutex.o \
-              ../lib/mbed-rtos/rtos/RtosTimer.o \
-              ../lib/mbed-rtos/rtos/Semaphore.o \
-              ../lib/mbed-rtos/rtos/Thread.o \
-              ../lib/Servo/Servo.o
 INCLUDE_PATHS = -I. -I./inc -I../include -I../lib/Servo -I../lib/mbed-rtos \
                 -I../lib/mbed-rtos/rtos -I../lib/mbed-rtos/rtx \
                 -I../lib/mbed-rtos/rtx/TARGET_CORTEX_M \
@@ -57,8 +32,9 @@ INCLUDE_PATHS = -I. -I./inc -I../include -I../lib/Servo -I../lib/mbed-rtos \
                 -I../lib/mbed/TARGET_LPC1768/TARGET_NXP/TARGET_LPC176X \
                 -I../lib/mbed/TARGET_LPC1768/TARGET_NXP/TARGET_LPC176X/TARGET_MBED_LPC1768 \
                 -I../lib/mbed/TARGET_LPC1768/TOOLCHAIN_GCC_ARM 
-LIBRARY_PATHS = -L../lib/mbed/TARGET_LPC1768/TOOLCHAIN_GCC_ARM 
-LIBRARIES = -lmbed 
+
+LIBRARY_PATHS = -L../lib/mbed/TARGET_LPC1768/TOOLCHAIN_GCC_ARM -L../lib
+LIBRARIES = -lmbed -lservo -lmbed-rtos -llpc1768
 LINKER_SCRIPT = ../lib/mbed/TARGET_LPC1768/TOOLCHAIN_GCC_ARM/LPC1768.ld
 
 ############################################################################### 
@@ -116,9 +92,8 @@ clean:
 	$(CPP) $(CC_FLAGS) $(CC_SYMBOLS) $(CAN_FLAGS) $(TASK_FLAGS) -std=gnu++98 -fno-rtti $(INCLUDE_PATHS) -o $@ $<
 
 
-$(PROJECT).elf: $(OBJECTS) $(SYS_OBJECTS)
+$(PROJECT).elf: $(OBJECTS)
 	$(LD) $(LD_FLAGS) -T$(LINKER_SCRIPT) $(LIBRARY_PATHS) -o $@ $^ $(LIBRARIES) $(LD_SYS_LIBS) $(LIBRARIES) $(LD_SYS_LIBS)
-
 	@echo ""
 	@echo "*****"
 	@echo "***** You must modify vector checksum value in *.bin and *.hex files."
@@ -140,6 +115,7 @@ lst: $(PROJECT).lst
 size: $(PROJECT).elf
 	@echo "SIZE CHASSIS:"  >> ../sizes
 	$(SIZE) $(PROJECT).elf >> ../sizes
+
 
 DEPS = $(OBJECTS:.o=.d)
 -include $(DEPS)

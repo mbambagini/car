@@ -1,4 +1,5 @@
-MODULES := lib chassis chassis_test gateway
+MODULES := lib chassis chassis_test 
+#gateway
 
 all:
 	@rm -f sizes

@@ -17,3 +17,7 @@
 
 # compile
 sizes
+
+# libs
+lib/*.a
+
