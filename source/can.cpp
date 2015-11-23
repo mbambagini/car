@@ -4,7 +4,6 @@
 #include "rtos.h"
 
 /*** GLOBAL DATA ***/
-
 //message buffers
 can_cmd_body_t can_cmd_body;
 can_sts_body_t can_sts_body;
@@ -15,31 +14,30 @@ can_sts_diag_t can_sts_diag;
 can_cmd_camera_t can_cmd_camera;
 
 /*** LOCAL DATA ***/
-
 //transceiver
 static CAN can(HW_CAN_TX, HW_CAN_RX);
-
 //countdown for missing messages
-uint8 can_missing[CAN_RX_PERIODIC_MSG];
+static uint8 can_missing[CAN_RX_PERIODIC_MSG];
+//counter for tx errors
+static uint32 can_tx_error_counter = 0;
 
 /*** LOCAL FUNCTION PROTOTYPES ***/
-
 //read if there are messages in the buffer
 void can_rx();
-
 //send pending messages
 void can_tx();
 
 /*** GLOBAL FUNCTIONS ***/
+uint32 get_can_errors () {
+  return can_tx_error_counter;
+}
 
-void init_can()
-{
+void init_can() {
   for (int i = 0; i < CAN_RX_PERIODIC_MSG; i++)
     can_missing[i] = CAN_MISSING_DETECTION;
 }
 
-void thread_can (void const *args)
-{
+void thread_can (void const *args) {
   while(1) {
     can_rx();
     can_tx();
@@ -47,15 +45,13 @@ void thread_can (void const *args)
   }
 }
 
-bool can_msg_is_missing (uint8 msg_id)
-{
+bool can_msg_is_missing (uint8 msg_id) {
   if (msg_id < CAN_RX_PERIODIC_MSG)
     return (can_missing[msg_id] == 0);
   return true;
 }
 
 /*** LOCAL FUNCTIONS ***/
-
 void can_rx () {
   CANMessage message;
 
@@ -151,10 +147,12 @@ void can_tx () {
 #ifdef NET_TX_CMD_BODY
   if (can_cmd_body.flag == 0) {
     wait(2); //wait 2 milliseconds between 2 consecutive transmissions
-    if (!can.write(CANMessage(CAN_CMD_BODY_ID,
-                              (char*)(&(can_cmd_body.payload.buf)),
-                              CAN_CMD_PAYLOAD_BODY)))
+    if (!can.write(CANMessage(CAN_CMD_BODY_ID, (char*)(&(can_cmd_body.payload.buf)), CAN_CMD_PAYLOAD_BODY))) {
+#ifdef DEBUG
       printf("SEND CMD_BODY NOT OK\r\n");
+#endif
+      can_tx_error_counter++;
+    }
     can_cmd_body.flag = CAN_CMD_BODY_PERIOD;
   }
   can_cmd_body.flag--;
@@ -162,10 +160,12 @@ void can_tx () {
 #ifdef NET_TX_STS_BODY
   if (can_sts_body.flag == 0) {
     wait(2); //wait 2 milliseconds between 2 consecutive transmissions
-    if (!can.write(CANMessage(CAN_STS_BODY_ID,
-                              (char*)(&(can_sts_body.payload.buf)),
-                              CAN_STS_PAYLOAD_BODY)))
+    if (!can.write(CANMessage(CAN_STS_BODY_ID, (char*)(&(can_sts_body.payload.buf)), CAN_STS_PAYLOAD_BODY))) {
+#ifdef DEBUG
       printf("SEND STS_BODY NOT OK\r\n");
+#endif
+      can_tx_error_counter++;
+    }
     can_sts_body.flag = CAN_STS_BODY_PERIOD;
   }
   can_sts_body.flag--;
@@ -173,10 +173,12 @@ void can_tx () {
 #ifdef NET_TX_CMD_ENGINE
   if (can_cmd_engine.flag == 0) {
     wait(2); //wait 2 milliseconds between 2 consecutive transmissions
-    if (!can.write(CANMessage(CAN_CMD_ENGINE_ID,
-                              (char*)(&(can_cmd_engine.payload.buf)),
-                              CAN_CMD_PAYLOAD_ENGINE)))
+    if (!can.write(CANMessage(CAN_CMD_ENGINE_ID, (char*)(&(can_cmd_engine.payload.buf)), CAN_CMD_PAYLOAD_ENGINE))) {
+#ifdef DEBUG
       printf("SEND CMD_ENGINE NOT OK\r\n");
+#endif
+      can_tx_error_counter++;
+    }
     can_cmd_engine.flag = CAN_CMD_ENGINE_PERIOD;
   }
   can_cmd_engine.flag--;
@@ -184,10 +186,12 @@ void can_tx () {
 #ifdef NET_TX_CMD_CAMERA
   if (can_cmd_camera.flag == 0) {
     wait(2); //wait 2 milliseconds between 2 consecutive transmissions
-    if (!can.write(CANMessage(CAN_CMD_CAMERA_ID,
-                              (char*)(&(can_cmd_camera.payload.buf)),
-                              CAN_CMD_PAYLOAD_CAMERA)))
+    if (!can.write(CANMessage(CAN_CMD_CAMERA_ID, (char*)(&(can_cmd_camera.payload.buf)), CAN_CMD_PAYLOAD_CAMERA))) {
+#ifdef DEBUG
       printf("SEND CMD_CAMERA NOT OK\r\n");
+#endif
+      can_tx_error_counter++;
+    }
     can_cmd_camera.flag = CAN_CMD_CAMERA_PERIOD;
   }
   can_cmd_camera.flag--;
@@ -197,30 +201,36 @@ void can_tx () {
 #ifdef NET_TX_CMD_DIAG
   if (can_cmd_diag.flag == CAN_FLAG_SEND) {
     wait(2); //wait 2 milliseconds between 2 consecutive transmissions
-    if (!can.write(CANMessage(CAN_CMD_DIAG_ID,
-                             (char*)(&(can_cmd_diag.payload.buf)),
-                             CAN_CMD_PAYLOAD_DIAG)))
+    if (!can.write(CANMessage(CAN_CMD_DIAG_ID, (char*)(&(can_cmd_diag.payload.buf)), CAN_CMD_PAYLOAD_DIAG))) {
+#ifdef DEBUG
       printf("SEND CMD_DIAG NOT OK\r\n");
+#endif
+      can_tx_error_counter++;
+    }
     can_cmd_diag.flag = CAN_FLAG_EMPTY;
   }
 #endif
 #ifdef NET_TX_STS_DIAG
   if (can_sts_diag.flag == CAN_FLAG_SEND) {
     wait(2); //wait 2 milliseconds between 2 consecutive transmissions
-    if (!can.write(CANMessage(CAN_STS_DIAG_ID,
-                             (char*)(&(can_sts_diag.payload.buf)),
-                             CAN_STS_PAYLOAD_DIAG)))
+    if (!can.write(CANMessage(CAN_STS_DIAG_ID, (char*)(&(can_sts_diag.payload.buf)), CAN_STS_PAYLOAD_DIAG))) {
+#ifdef DEBUG
       printf("SEND STS_DIAG NOT OK\r\n");
+#endif
+      can_tx_error_counter++;
+    }
     can_sts_diag.flag = CAN_FLAG_EMPTY;
   }
 #endif
 #ifdef NET_TX_CMD_TIME
   if (can_cmd_time.flag == CAN_FLAG_SEND) {
     wait(2); //wait 2 milliseconds between 2 consecutive transmissions
-    if (!can.write(CANMessage(CAN_CMD_TIME_ID,
-                             (char*)(&(can_cmd_time.payload.buf)),
-                             CAN_CMD_PAYLOAD_TIME)))
+    if (!can.write(CANMessage(CAN_CMD_TIME_ID, (char*)(&(can_cmd_time.payload.buf)), CAN_CMD_PAYLOAD_TIME))) {
+#ifdef DEBUG
       printf("SEND CMD_TIME NOT OK\r\n");
+#endif
+      can_tx_error_counter++;
+    }
     can_cmd_time.flag = CAN_FLAG_EMPTY;
   }
 #endif
