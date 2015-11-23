@@ -103,21 +103,21 @@ clean:
 
 
 .asm.o:
-	@$(CC) $(CPU) -c -x assembler-with-cpp -o $@ $<
+	$(CC) $(CPU) -c -x assembler-with-cpp -o $@ $<
 .s.o:
-	@$(CC) $(CPU) -c -x assembler-with-cpp -o $@ $<
+	$(CC) $(CPU) -c -x assembler-with-cpp -o $@ $<
 .S.o:
-	@$(CC) $(CPU) -c -x assembler-with-cpp -o $@ $<
+	$(CC) $(CPU) -c -x assembler-with-cpp -o $@ $<
 
 .c.o:
-	@$(CC)  $(CC_FLAGS) $(CC_SYMBOLS) $(CAN_FLAGS) $(TASK_FLAGS) -std=gnu99   $(INCLUDE_PATHS) -o $@ $<
+	$(CC)  $(CC_FLAGS) $(CC_SYMBOLS) $(CAN_FLAGS) $(TASK_FLAGS) -std=gnu99   $(INCLUDE_PATHS) -o $@ $<
 
 .cpp.o:
-	@$(CPP) $(CC_FLAGS) $(CC_SYMBOLS) $(CAN_FLAGS) $(TASK_FLAGS) -std=gnu++98 -fno-rtti $(INCLUDE_PATHS) -o $@ $<
+	$(CPP) $(CC_FLAGS) $(CC_SYMBOLS) $(CAN_FLAGS) $(TASK_FLAGS) -std=gnu++98 -fno-rtti $(INCLUDE_PATHS) -o $@ $<
 
 
 $(PROJECT).elf: $(OBJECTS) $(SYS_OBJECTS)
-	@$(LD) $(LD_FLAGS) -T$(LINKER_SCRIPT) $(LIBRARY_PATHS) -o $@ $^ $(LIBRARIES) $(LD_SYS_LIBS) $(LIBRARIES) $(LD_SYS_LIBS)
+	$(LD) $(LD_FLAGS) -T$(LINKER_SCRIPT) $(LIBRARY_PATHS) -o $@ $^ $(LIBRARIES) $(LD_SYS_LIBS) $(LIBRARIES) $(LD_SYS_LIBS)
 
 	@echo ""
 	@echo "*****"
