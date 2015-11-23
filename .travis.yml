@@ -3,6 +3,7 @@ python:
   - "2.7"
 script: "make"
 install:
+  - "sudo chmod +x travis/install_dependencies.sh"
   - "sudo travis/install_dependencies.sh > /dev/null"
   - sudo pip install colorama
   - sudo pip install prettytable
