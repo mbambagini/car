@@ -1,8 +1,10 @@
-//this project implements the body/engine devices
+//this project implements the body/engine components of the
+//remote-controlled car
 
 #include "mbed.h"
-#include "common_types.h"
 #include "rtos.h"
+
+#include "common_types.h"
 
 #include "can.hpp"
 #include "led.hpp"
@@ -12,13 +14,12 @@
 #include "clock.hpp"
 
 //initialize the system:
-//- single components: body, clock, diagnosis, engine
-//- hardware: leds, can
+//- hardware: can
+//- single components: body, clock, diagnosis, engine, leds
 //- threads
-int init();
+void init();
 
-int main()
-{
+int main() {
   //system setup
   init();
 
@@ -32,8 +33,7 @@ Thread *th_engine;
 Thread *th_diag;
 Thread *th_clock;
 
-void init_threads ()
-{
+void init_threads () {
   th_body = new Thread(thread_body);
   th_engine = new Thread(thread_engine);
   th_can = new Thread(thread_can);
@@ -41,21 +41,17 @@ void init_threads ()
   th_clock = new Thread(thread_clock);
 }
 
-int init ()
-{
+void init () {
+  //setup network
+  init_can();
+
+  //setup components
   init_body();
   init_clock();
   init_diag();
   init_engine();
-
-  //printf("INIT LED\r\n");
   init_led();
 
-  //printf("INIT CAN\r\n");
-  init_can();
-
-  //printf("INIT THREAD\r\n");
+  //run threads
   init_threads();
-
-  return true;
 }
