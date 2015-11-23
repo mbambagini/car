@@ -1,3 +1,5 @@
+!https://travis-ci.org/mbambagini/car.svg?branch=master!:https://travis-ci.org/mbambagini/car
+
 # car
 
 This repository contains all the software of the remote controlled car.
