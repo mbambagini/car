@@ -119,7 +119,7 @@ $(PROJECT).lst: $(PROJECT).elf
 lst: $(PROJECT).lst
 
 size: $(PROJECT).elf
-	$(SIZE) $(PROJECT).elf
+	$(SIZE) $(PROJECT).elf >> sizes
 
 DEPS = $(OBJECTS:.o=.d)
 -include $(DEPS)
