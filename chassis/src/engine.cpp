@@ -7,29 +7,24 @@
 #include "rtos.h"
 
 /*** DEFINES ***/
-
 //maximum time interval (in milliseconds) during which the
 //engine can be blocked
 #define MAX_BREAKING_INTERVAL (1000/ENGINE_THREAD_PERIOD) 
 
 /*** LOCAL DATA ***/
-
 //steering servo motor
 static Servo steering_servo(HW_STEERING_SERVO);
-
 //engine
 static PwmOut engine_power(HW_ENGINE_ENABLER);
 static DigitalOut dir1(HW_ENGINE_DIR_1);
 static DigitalOut dir2(HW_ENGINE_DIR_2);
 
 /*** LOCAL FUNCTION PROTOTYPES ***/
-
 //stop the engine (without breaking) and set the steering
 //servo at 0°
 void stop_engine();
 
 /*** GLOBAL FUNCTIONS ***/
-
 void init_engine() {
   steering_servo.calibrate(HW_SERVO_RANGE_INIT,
                            HW_SERVO_ANGLE_INIT);
@@ -46,12 +41,11 @@ void thread_engine (void const *args) {
     else {
       //if a valid message has been received
       if (can_cmd_engine.flag == CAN_FLAG_RECEIVED) {
-/*        printf("ENGINE: %d %d %d %d\r\n",
-               can_cmd_engine.payload.msg.steering, 
-               can_cmd_engine.payload.msg.power,
-               can_cmd_engine.payload.msg.breaking,
-               can_cmd_engine.payload.msg.direction);*/
-
+#ifdef DEBUG
+        printf("ENGINE: %d %d %d %d\r\n", can_cmd_engine.payload.msg.steering, 
+               can_cmd_engine.payload.msg.power, can_cmd_engine.payload.msg.breaking,
+               can_cmd_engine.payload.msg.direction);
+#endif
         //set steering angle
         uint8 tmp = can_cmd_engine.payload.msg.steering;
         steering_servo =  tmp >= 100 ? 1.0 : (float)tmp/100.0;
@@ -98,7 +92,6 @@ void thread_engine (void const *args) {
 }
 
 /*** LOCAL FUNCTIONS ***/
-
 void stop_engine ()
 {
   engine_power = 0; //off
