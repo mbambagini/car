@@ -1,4 +1,4 @@
-!https://travis-ci.org/mbambagini/car.svg?branch=master!:https://travis-ci.org/mbambagini/car
+[![Build Status](https://travis-ci.org/mbambagini/car.svg?branch=master)](https://travis-ci.org/mbambagini/car)
 
 # car
 
