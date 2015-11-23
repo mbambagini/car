@@ -1,8 +1,8 @@
 MODULES := lib chassis chassis_test gateway
 
 all:
-	@$(foreach MODULE,$(MODULES), cd $(MODULE); make 2>> compile.cmp; cd ../;)
+	$(foreach MODULE,$(MODULES), cd $(MODULE); make; cd ../;)
 
 clean:
-	@$(foreach MODULE,$(MODULES), cd $(MODULE); make clean; cd ../;)
+	$(foreach MODULE,$(MODULES), cd $(MODULE); make clean; cd ../;)
 
