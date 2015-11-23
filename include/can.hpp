@@ -16,4 +16,8 @@ void thread_can(void const *args);
 //CAN_MISSING_DETECTION
 bool can_msg_is_missing(uint8 msg_id);
 
+//return the total number of errors happened while transmitting messages
+//on the CAN bus
+uint32 get_can_errors ();
+
 #endif //__CAN_H__
