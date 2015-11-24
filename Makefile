@@ -3,7 +3,7 @@ MODULES := lib chassis chassis_test
 
 all:
 	@rm -f sizes
-	@$(foreach MODULE,$(MODULES), cd $(MODULE); make; cd ../;)
+	@$(foreach MODULE,$(MODULES), rm -f ./source/can.cpp; cd $(MODULE); make; cd ../;)
 	@cat sizes
 
 clean:
