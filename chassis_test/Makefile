@@ -76,12 +76,6 @@ clean:
 $(PROJECT).elf: $(OBJECTS)
 	@$(LD) $(LD_FLAGS) -T$(LINKER_SCRIPT) $(LIBRARY_PATHS) -o $@ $^ $(LIBRARIES) $(LD_SYS_LIBS) $(LIBRARIES) $(LD_SYS_LIBS)
 
-	@echo ""
-	@echo "*****"
-	@echo "***** You must modify vector checksum value in *.bin and *.hex files."
-	@echo "*****"
-	@echo ""
-
 
 $(PROJECT).bin: $(PROJECT).elf
 	@$(OBJCOPY) -O binary $< $@
