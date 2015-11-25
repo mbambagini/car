@@ -72,10 +72,7 @@ void thread_body (void const *args) {
     can_sts_body.payload.msg.hit_left = hit_left.read();
     can_sts_body.payload.msg.hit_right = hit_right.read();
 #ifdef DEBUG
-    printf("HIT: %d %d %d %d\n\r", hit_front.read(),
-                                   hit_rear.read(),
-                                   hit_left.read(),
-                                   hit_right.read());
+    printf("HIT: %d %d %d %d\n\r", hit_front.read(), hit_rear.read(), hit_left.read(), hit_right.read());
     printf("EYE: %d %d %d\n\r", can_sts_body.payload.msg.eye_back_l,
                                 can_sts_body.payload.msg.eye_back_r, 
                                 can_sts_body.payload.msg.eye_front);
