@@ -26,8 +26,7 @@ void stop_engine();
 
 /*** GLOBAL FUNCTIONS ***/
 void init_engine() {
-  steering_servo.calibrate(HW_SERVO_RANGE_INIT,
-                           HW_SERVO_ANGLE_INIT);
+  steering_servo.calibrate(HW_SERVO_RANGE_INIT, HW_SERVO_ANGLE_INIT);
   engine_power.period(HW_ENGINE_PERIOD); //100ms
   engine_power = 0; //off    
 }
