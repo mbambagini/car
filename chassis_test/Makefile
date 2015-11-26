@@ -11,18 +11,24 @@ TASK_FLAGS = -DCAN_THREAD_PERIOD=100
 OBJECTS = ../source/can.o \
           ./main.o
 
-INCLUDE_PATHS = -I. -I../include -I../lib/mbed-rtos -I../lib/mbed-rtos/rtx \
-                -I../lib/mbed-rtos/rtx/TARGET_CORTEX_M \
-                -I../lib/mbed-rtos/rtx/TARGET_CORTEX_M/TARGET_M3 \
-                -I../lib/mbed-rtos/rtx/TARGET_CORTEX_M/TARGET_M3/TOOLCHAIN_GCC \
-                -I../lib/mbed-rtos/rtos -I../lib/mbed -I../lib/mbed/TARGET_LPC1768 \
-                -I../lib/mbed/TARGET_LPC1768/TARGET_NXP \
-                -I../lib/mbed/TARGET_LPC1768/TARGET_NXP/TARGET_LPC176X \
-                -I../lib/mbed/TARGET_LPC1768/TARGET_NXP/TARGET_LPC176X/TARGET_MBED_LPC1768 \
-                -I../lib/mbed/TARGET_LPC1768/TOOLCHAIN_GCC_ARM 
-LIBRARY_PATHS = -L../lib/mbed/TARGET_LPC1768/TOOLCHAIN_GCC_ARM -L../lib
+INCLUDE_PATHS = -I. \
+                -I../include \
+                -I../include/net \
+                -I../include/mbed-rtos \
+                -I../include/mbed-rtos/rtx \
+                -I../include/mbed-rtos/rtx/TARGET_CORTEX_M \
+                -I../include/mbed-rtos/rtx/TARGET_CORTEX_M/TARGET_M3 \
+                -I../include/mbed-rtos/rtx/TARGET_CORTEX_M/TARGET_M3/TOOLCHAIN_GCC \
+                -I../include/mbed-rtos/rtos \
+                -I../include/mbed \
+                -I../include/mbed/TARGET_LPC1768 \
+                -I../include/mbed/TARGET_LPC1768/TARGET_NXP \
+                -I../include/mbed/TARGET_LPC1768/TARGET_NXP/TARGET_LPC176X \
+                -I../include/mbed/TARGET_LPC1768/TARGET_NXP/TARGET_LPC176X/TARGET_MBED_LPC1768 \
+                -I../include/mbed/TARGET_LPC1768/TOOLCHAIN_GCC_ARM 
+LIBRARY_PATHS = -L../lib
 LIBRARIES = -lmbed -lmbed-rtos -llpc1768
-LINKER_SCRIPT = ../lib/mbed/TARGET_LPC1768/TOOLCHAIN_GCC_ARM/LPC1768.ld
+LINKER_SCRIPT = ../include/mbed/TARGET_LPC1768/TOOLCHAIN_GCC_ARM/LPC1768.ld
 
 ############################################################################### 
 GCC_BIN = /usr/bin/

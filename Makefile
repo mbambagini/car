@@ -1,4 +1,4 @@
-MODULES := lib chassis chassis_test 
+MODULES := chassis chassis_test 
 #gateway
 
 all:
