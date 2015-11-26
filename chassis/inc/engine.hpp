@@ -9,14 +9,14 @@
 #define HW_SERVO_RANGE_INIT          (0.0005)
 #define HW_SERVO_ANGLE_INIT          (45.0)
 
-/**
- * Initialization of the engine component:
+/*! \brief initialization of the Engine unit (ECM)
+ * Initialization of the engine components:
  * - main engine
  * - steering motor
  */
 void init_engine();
 
-/**
+/*! \brief ECM thread
  * The thread executes periodically:
  * - check inputs: if no message has arrived for 2.5 seconds, switch the
  *   actuators off
@@ -27,6 +27,8 @@ void init_engine();
  *       (while breaking the engine dissipates much power)
  *     - otherwise, set direction and set the current which flows into the 
  *       motor
+ *
+ * \param args not used
  */
 void thread_engine (void const *args);
 

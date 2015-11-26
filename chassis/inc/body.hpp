@@ -13,10 +13,18 @@
 #define HW_FRONT_EYE_ADDR            0xE0
 #define HW_FRONT_EYE_DEFAULT_ADDR    0xF2
 
-//initialize body entity
+/*! \brief initialize body entity (BCM)
+ *
+ */
 void init_body();
 
-//body task
+/*! \brief body task (BCM)
+ * this thread periodically:
+ * - reads driver commands (such as lights)
+ * - sends status to driver (such as collision detection and distances)
+ *
+ * \param args not used
+ */
 void thread_body (void const *args);
 
 #endif //__BODY_HPP__

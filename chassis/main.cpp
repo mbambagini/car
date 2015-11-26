@@ -1,5 +1,8 @@
-//this project implements the body/engine components of the
-//remote-controlled car
+/*! \file main.cpp
+ * this file contains the main loop which initializes the system and then
+ * lets it run.
+ * This project is the BCM/ECM SW of the remote-controlled car
+ */
 
 #include "mbed.h"
 #include "rtos.h"
@@ -13,10 +16,12 @@
 #include "diag.hpp"
 #include "clock.hpp"
 
-//initialize the system:
-//- hardware: can
-//- single components: body, clock, diagnosis, engine, leds
-//- threads
+/*! \brief system initialization
+ * the initialization components of the system are:
+ * - hardware: can
+ * - single components: body, clock, diagnosis, engine, leds
+ * - threads
+ */
 void init();
 
 int main() {
@@ -33,6 +38,9 @@ Thread *th_engine;
 Thread *th_diag;
 Thread *th_clock;
 
+/*! \brief start all threads
+ *
+ */
 void init_threads () {
   th_body = new Thread(thread_body);
   th_engine = new Thread(thread_engine);
@@ -55,3 +63,4 @@ void init () {
   //run threads
   init_threads();
 }
+

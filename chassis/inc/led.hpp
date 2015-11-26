@@ -4,7 +4,7 @@
 //LED
 #define HW_ALIVE_LED                 LED1
 
-/**
+/*! \brief initialize the led notification system onboard
  * initialization function of the leds:
  * - LED1: blinking at 1Hz
  */
