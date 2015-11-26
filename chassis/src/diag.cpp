@@ -13,7 +13,8 @@ void thread_diag (void const *args) {
       uint16 cmd = can_cmd_diag.payload.msg.cmd;
       uint32 data = can_cmd_diag.payload.msg.data;
       switch(cmd) {
-        case CMD_ECHO:
+        case CMD_ECHO_ECM:
+        case CMD_ECHO_BCM:
           can_sts_diag.payload.msg.data = data;
           can_sts_diag.flag = CAN_FLAG_SEND;
           break;

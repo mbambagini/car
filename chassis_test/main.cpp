@@ -19,6 +19,7 @@ void send() {
   static int engine_n_sent = 0;
   static bool engine_direction = false;
   static int diag_n_sent = 0;
+  static bool diag_flag = false;
 
   if ((counter % BODY_TX) == 0) {
     can_cmd_body.payload.msg.light_r = (body_n_sent & 0x0001) == 0x0001;
@@ -51,7 +52,11 @@ void send() {
   }
 
   if ((counter % DIAG_TX) == 0) {
-    can_cmd_diag.payload.msg.cmd = 0x0A0A;
+    if (diag_flag)
+      can_cmd_diag.payload.msg.cmd = 0x0A0A;
+    else
+      can_cmd_diag.payload.msg.cmd = 0x0A0B;
+    diag_flag = ~diag_flag;
     can_cmd_diag.payload.msg.data = diag_n_sent;
     printf("DIAG %d-th (data) = (%d)\n\r", diag_n_sent, diag_n_sent);
     can_cmd_diag.flag = CAN_FLAG_SEND;
@@ -78,7 +83,7 @@ void send() {
     can_sts_diag.flag = CAN_FLAG_EMPTY;
   }
 
-  counter++;    
+  counter++;
 }
 
 
@@ -89,4 +94,6 @@ int main() {
   ticker.attach(&send, 0.2);
 
   while(1) {};
+
 }
+

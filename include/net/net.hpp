@@ -7,7 +7,8 @@
 #define CAN_FLAG_RECEIVED       0x01
 #define CAN_FLAG_SEND           0x02
 
-#define CMD_ECHO                0x0A0A
+#define CMD_ECHO_BCM            0x0A0A
+#define CMD_ECHO_ECM            0x0A0B
 
 /**************************************************
  * MESSAGE IDs
