@@ -3,7 +3,7 @@
 #include "can.hpp"
 #include "rtos.h"
 
-/*** GLOBAL DATA ***/
+/********************** GLOBAL DATA **********************/
 //message buffers
 can_cmd_body_t can_cmd_body;
 can_sts_body_t can_sts_body;
@@ -13,18 +13,27 @@ can_cmd_diag_t can_cmd_diag;
 can_sts_diag_t can_sts_diag;
 can_cmd_camera_t can_cmd_camera;
 
-/*** LOCAL DATA ***/
-//transceiver
+/********************** LOCAL DATA ***********************/
+
+/*! \brief CAN transceiver
+ */
 static CAN can(HW_CAN_TX, HW_CAN_RX);
-//countdown for missing messages
+
+/*! \brief internal counter for consecutive missing messages
+ */
 static uint8 can_missing[CAN_RX_PERIODIC_MSG];
-//counter for tx errors
+
+/*! \brief counter for overall tx errors
+ */
 static uint32 can_tx_error_counter = 0;
 
 /*** LOCAL FUNCTION PROTOTYPES ***/
-//read if there are messages in the buffer
+/*! \brief read if there are messages in the buffer
+ * Read messages are stored within the global buffers
+ */
 void can_rx();
-//send pending messages
+/*! \brief send pending messages
+ */
 void can_tx();
 
 /*** GLOBAL FUNCTIONS ***/

@@ -46,8 +46,7 @@ void send() {
            can_cmd_engine.payload.msg.steering,
            can_cmd_engine.payload.msg.power,
            can_cmd_engine.payload.msg.direction,
-           can_cmd_engine.payload.msg.breaking
-           );
+           can_cmd_engine.payload.msg.breaking);
     engine_n_sent++;
   }
 
