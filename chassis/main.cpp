@@ -4,6 +4,25 @@
  * This project is the BCM/ECM SW of the remote-controlled car
  */
 
+/*! \mainpage CAR Chassis project
+*
+* This project is the software which implements the BCM and ECM components
+* of the remote-controlled car
+*
+* \section install_sec Compile
+* 
+* To compile the module just type:
+* \code{.sh}
+* make
+* \endcode
+* The elf file is produced in the same directory.
+* 
+* To update documentation, type:
+* \code{.sh}
+* make doc
+* \endcode
+*/
+
 #include "mbed.h"
 #include "rtos.h"
 

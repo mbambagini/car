@@ -76,7 +76,7 @@ ifeq ($(DEBUG), 1)
   CC_FLAGS += -DDEBUG -O0
 endif
 
-.PHONY: all clean lst size
+.PHONY: all clean lst size doc
 
 all: $(PROJECT).bin $(PROJECT).hex size
 
@@ -112,6 +112,9 @@ size: $(PROJECT).elf
 	@echo "SIZE CHASSIS:"  >> ../sizes
 	$(SIZE) $(PROJECT).elf >> ../sizes
 lst: $(PROJECT).lst
+
+doc:
+	doxygen doxygen.config
 
 # dependencies
 DEPS = $(OBJECTS:.o=.d)

@@ -9,3 +9,4 @@ all:
 clean:
 	@rm -f sizes
 	$(foreach MODULE,$(MODULES), cd $(MODULE); make clean; cd ../;)
+

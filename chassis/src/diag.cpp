@@ -1,3 +1,13 @@
+/*! \file diag.cpp
+ * \brief Implementation of diag task
+ *
+ * The diag task is in charge of checking periodically if there are any
+ * diagnosis request from the driver. The ones, which are implemeted so
+ * far, are:
+ * - CMD_ECHO_BCM: periodically sent to check if the BCM is alive
+ * - CMD_ECHO_ECM: periodically sent to check if the ECM is alive
+ */
+
 #include "common_types.h"
 #include "can.hpp"
 #include "net.hpp"

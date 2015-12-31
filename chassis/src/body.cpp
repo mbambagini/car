@@ -1,3 +1,12 @@
+/*! \file body.cpp
+ *  \brief BCM implementation
+ *
+ * this file implements the BCM component which is in charge of:
+ * - lighting system
+ * - distance sensors
+ * - hit detection
+ */
+
 #include "common_types.h"
 #include "body.hpp"
 #include "net.hpp"
@@ -27,19 +36,24 @@ static DigitalIn hit_right(HW_HIT_RIGHT);
 
 /*** LOCAL FUNCTION PROTOTYPES ***/
 
-//read from the analog input GP2D12
+/*! \brief read from the analog input GP2D12
+ */
 uint8 read_back_distance (AnalogIn* side);
 
-//initialize the SRF10
+/*! \brief initialize the SRF10
+ */
 void srf10_start (char addr);
 
-//change the address of the SRF10
+/*! \brief change the address of the SRF10
+ */
 void srf10_change_address (char actual_addr, char new_addr);
 
-//read from the SRF10
+/*! \brief read from the SRF10
+ */
 uint16 srf10_read (char addr);
 
-//handle of error condition: switch all hardware off
+/*! \brief handle of error condition: switch all hardware off
+ */
 void stop_body() {
 }
 

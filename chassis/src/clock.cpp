@@ -1,3 +1,9 @@
+/*! \file clock.cpp
+ * \brief Implementation of clock task
+ *
+ * The clock task is in charge of checking periodically if a clock message has
+ * arrived and, if so, it updates the internal rtc
+ */
 #include "common_types.h"
 #include "net.hpp"
 #include "can.hpp"
