@@ -181,7 +181,7 @@ void can_tx () {
 #endif
 #ifdef NET_TX_CMD_ENGINE
   if (can_cmd_engine.flag == 0) {
-    wait(2); //wait 2 milliseconds between 2 consecutive transmissions
+    wait(1); //wait 1 millisecond between 2 consecutive transmissions
     if (!can.write(CANMessage(CAN_CMD_ENGINE_ID, (char*)(&(can_cmd_engine.payload.buf)), CAN_CMD_PAYLOAD_ENGINE))) {
 #ifdef DEBUG
       printf("SEND CMD_ENGINE NOT OK\r\n");
@@ -194,7 +194,7 @@ void can_tx () {
 #endif
 #ifdef NET_TX_CMD_CAMERA
   if (can_cmd_camera.flag == 0) {
-    wait(2); //wait 2 milliseconds between 2 consecutive transmissions
+    wait(1); //wait 1 millisecond between 2 consecutive transmissions
     if (!can.write(CANMessage(CAN_CMD_CAMERA_ID, (char*)(&(can_cmd_camera.payload.buf)), CAN_CMD_PAYLOAD_CAMERA))) {
 #ifdef DEBUG
       printf("SEND CMD_CAMERA NOT OK\r\n");
@@ -209,7 +209,7 @@ void can_tx () {
   /** event messages */
 #ifdef NET_TX_CMD_DIAG
   if (can_cmd_diag.flag == CAN_FLAG_SEND) {
-    wait(2); //wait 2 milliseconds between 2 consecutive transmissions
+    wait(1); //wait 1 millisecond between 2 consecutive transmissions
     if (!can.write(CANMessage(CAN_CMD_DIAG_ID, (char*)(&(can_cmd_diag.payload.buf)), CAN_CMD_PAYLOAD_DIAG))) {
 #ifdef DEBUG
       printf("SEND CMD_DIAG NOT OK\r\n");
@@ -221,7 +221,7 @@ void can_tx () {
 #endif
 #ifdef NET_TX_STS_DIAG
   if (can_sts_diag.flag == CAN_FLAG_SEND) {
-    wait(2); //wait 2 milliseconds between 2 consecutive transmissions
+    wait(1); //wait 1 millisecond between 2 consecutive transmissions
     if (!can.write(CANMessage(CAN_STS_DIAG_ID, (char*)(&(can_sts_diag.payload.buf)), CAN_STS_PAYLOAD_DIAG))) {
 #ifdef DEBUG
       printf("SEND STS_DIAG NOT OK\r\n");
@@ -233,7 +233,7 @@ void can_tx () {
 #endif
 #ifdef NET_TX_CMD_TIME
   if (can_cmd_time.flag == CAN_FLAG_SEND) {
-    wait(2); //wait 2 milliseconds between 2 consecutive transmissions
+    wait(1); //wait 1 millisecond between 2 consecutive transmissions
     if (!can.write(CANMessage(CAN_CMD_TIME_ID, (char*)(&(can_cmd_time.payload.buf)), CAN_CMD_PAYLOAD_TIME))) {
 #ifdef DEBUG
       printf("SEND CMD_TIME NOT OK\r\n");
