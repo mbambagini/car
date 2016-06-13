@@ -32,12 +32,16 @@ void init_engine() {
 }
 
 void thread_engine (void const *args) {
+  (void*)args;
+
   static uint8 prev_breaking = 0; //if it was breaking the previous step
   static uint8 breaking_interval = 0; //how long it has been breaking
+
   while(1) {
-    if (can_msg_is_missing(CAN_MISSING_CMD_ENGINE_ID))
+    if (can_msg_is_missing(CAN_MISSING_CMD_ENGINE_ID)) {
+      // no message received for a while: stop everything
       stop_engine();
-    else {
+    } else {
       //if a valid message has been received
       if (can_cmd_engine.flag == CAN_FLAG_RECEIVED) {
 #ifdef DEBUG
@@ -65,6 +69,7 @@ void thread_engine (void const *args) {
             dir1 = 1;
             dir2 = 0;
             engine_power = 0;
+            // do not set prev_breaking==0, otherwise it starts breaking again
           }
         } else {
           //normal execution (not breaking)
@@ -86,11 +91,13 @@ void thread_engine (void const *args) {
         can_cmd_engine.flag = CAN_FLAG_EMPTY;
       }
     }
-    Thread::wait(ENGINE_THREAD_PERIOD);
+//    Thread::wait(ENGINE_THREAD_PERIOD);
+    osThreadEndPeriod();
   }
 }
 
 /*** LOCAL FUNCTIONS ***/
+
 void stop_engine ()
 {
   engine_power = 0; //off
@@ -98,3 +105,4 @@ void stop_engine ()
   dir1 = 1;
   dir2 = 0;
 }
+

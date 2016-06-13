@@ -1,1 +1,0 @@
-program which tests the CAR project (concerning the CAN comunication)
