@@ -16,7 +16,6 @@
 #include "rtos.h"
 
 void init_diag () {
-  set_time(0);
 }
 
 void thread_diag (void const *args) {
@@ -29,15 +28,6 @@ void thread_diag (void const *args) {
         case CMD_ECHO_BCM:
           can_sts_diag.payload.msg.data = data;
           can_sts_diag.flag = CAN_FLAG_SEND;
-          break;
-        case CMD_TIME_ALL:
-          can_sts_diag.payload.msg.data = data;
-          can_sts_diag.flag = CAN_FLAG_SEND;
-          set_time(data); //+ offset 1/1/2000
-#ifdef DEBUG
-          time_t seconds = time(NULL);
-          printf("time: %s\r\n", ctime(&seconds));
-#endif
           break;
         default:
           //ignore it

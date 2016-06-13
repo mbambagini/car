@@ -12,7 +12,6 @@
  **************************************************/
 #define CMD_ECHO_BCM            0x0A0A
 #define CMD_ECHO_ECM            0x0A0B
-#define CMD_TIME_ALL            0x0B0B
 
 /**************************************************
  * MESSAGE IDs
@@ -75,7 +74,7 @@
 #define CAN_CMD_PAYLOAD_BODY    1
 #define CAN_STS_PAYLOAD_BODY    4
 #define CAN_CMD_PAYLOAD_ENGINE  4
-#define CAN_CMD_PAYLOAD_TIME    4
+#define CAN_CMD_PAYLOAD_TIME    8
 #define CAN_CMD_PAYLOAD_DIAG    8
 #define CAN_STS_PAYLOAD_DIAG    4
 
@@ -129,16 +128,18 @@ typedef struct can_cmd_engine_s {
     can_cmd_engine_payload_t payload;
     uint8 flag;
 } can_cmd_engine_t;
+
 typedef union can_cmd_time_payload_s {
     uint8 buf[CAN_CMD_PAYLOAD_TIME];
     struct {
-        uint32 time;
+        uint64 time;
     } msg;
 } can_cmd_time_payload_t;
 typedef struct can_cmd_time_s {
     can_cmd_time_payload_t payload;
     uint8 flag;
 } can_cmd_time_t;
+
 typedef union can_cmd_diag_payload_s {
     uint8 buf[CAN_CMD_PAYLOAD_DIAG];
     struct {
@@ -158,7 +159,7 @@ typedef union can_sts_diag_payload_s {
         uint32 data;
     } msg;
 } can_sts_diag_payload_t;
-typedef struct can_sts_diag_time_s {
+typedef struct can_sts_diag_s {
     can_sts_diag_payload_t payload;
     uint8 flag;
 } can_sts_diag_t;

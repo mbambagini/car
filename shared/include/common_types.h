@@ -10,5 +10,8 @@ typedef short int16;
 typedef unsigned int uint32;
 typedef int int32;
 
+typedef unsigned long long int uint64;
+typedef long long int int64;
+
 #endif //__COMMON_TYPES_H__
 

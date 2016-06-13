@@ -7,6 +7,7 @@
 DigitalOut led1(LED1);
 DigitalOut led2(LED2);
 
+
 #define SENDER_PERIOD_MS     100 //milliseconds
 
 #define RECEIVER_PERIOD_MS   100 //milliseconds
@@ -19,6 +20,9 @@ DigitalOut led2(LED2);
 
 #define DIAG_PERIOD_MS       1000 //milliseconds
 #define DIAG_COUNTER_TICK    (DIAG_PERIOD_MS/SENDER_PERIOD_MS)
+
+#define TIME_PERIOD_MS       60000 //milliseconds
+#define TIME_COUNTER_TICK    (TIME_PERIOD_MS/SENDER_PERIOD_MS)
 
 
 void sender(void const* t);
@@ -108,13 +112,15 @@ void sender(void const* t) {
     }
 */
 
-/*    
-  if ((counter % TIME_TX) == 0) {
+    
+  if ((counter % TIME_COUNTER_TICK) == 0) {
     can_cmd_time.payload.msg.time = time(NULL);
     can_cmd_time.flag = CAN_FLAG_SEND;
+/*
     printf("RESET TIME");
-  }
 */
+  }
+
     counter++;
 
     osThreadEndPeriod();
@@ -132,6 +138,7 @@ void receiver (void const* t) {
   while(1) {
     led2 = counter % 2;
     counter++;
+
     if (can_msg_is_missing(CAN_MISSING_STS_BODY_ID)) {
       printf("MISSING BODY\r\n");
     } else {
