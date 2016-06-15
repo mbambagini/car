@@ -87,18 +87,18 @@ Thread *th_clock;
  *
  */
 void init_threads () {
-  th_body   = new Thread(thread_body,   20, 100, NULL, osPriorityHigh);
-  th_engine = new Thread(thread_engine, 20, 100, NULL, osPriorityHigh);
-  th_can    = new Thread(thread_can,    15,  25, NULL, osPriorityRealtime);
-  th_diag   = new Thread(thread_diag,   20, 200, NULL, osPriorityHigh);
-  th_clock  = new Thread(thread_clock,  20, 500, NULL, osPriorityHigh);
+  th_body   = new Thread(thread_body,   BODY_THREAD_BUDGET,   BODY_THREAD_PERIOD,   NULL, osPriorityHigh);
+  th_engine = new Thread(thread_engine, ENGINE_THREAD_BUDGET, ENGINE_THREAD_PERIOD, NULL, osPriorityHigh);
+  th_can    = new Thread(thread_can,    CAN_THREAD_BUDGET,    CAN_THREAD_PERIOD,    NULL, osPriorityRealtime);
+  th_diag   = new Thread(thread_diag,   DIAG_THREAD_BUDGET,   DIAG_THREAD_PERIOD,   NULL, osPriorityHigh);
+  th_clock  = new Thread(thread_clock,  CLOCK_THREAD_BUDGET,  CLOCK_THREAD_PERIOD,  NULL, osPriorityHigh);
 }
 
 void init () {
   //setup network
-  uint32 message_mask = NET_RX_CMD_BODY & NET_TX_STS_BODY & 
-                        NET_RX_CMD_ENGINE &
-                        NET_RX_CMD_DIAG & NET_TX_STS_DIAG &
+  uint32 message_mask = NET_RX_CMD_BODY | NET_TX_STS_BODY | 
+                        NET_RX_CMD_ENGINE |
+                        NET_RX_CMD_DIAG | NET_TX_STS_DIAG |
                         NET_RX_CMD_TIME;
   init_can(message_mask);
 

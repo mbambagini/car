@@ -5,7 +5,12 @@ TASK_FLAGS    = -DCAN_THREAD_PERIOD=25      \
                 -DENGINE_THREAD_PERIOD=50   \
                 -DBODY_THREAD_PERIOD=100    \
                 -DDIAG_THREAD_PERIOD=500    \
-                -DCLOCK_THREAD_PERIOD=1000
+                -DCLOCK_THREAD_PERIOD=1000  \
+                -DCAN_THREAD_BUDGET=10      \
+                -DENGINE_THREAD_BUDGET=15   \
+                -DBODY_THREAD_BUDGET=20     \
+                -DDIAG_THREAD_BUDGET=20     \
+                -DCLOCK_THREAD_BUDGET=30
 
 # objects
 SOURCE_FILES  = body.cpp diag.cpp engine.cpp led.cpp clock.cpp main.cpp

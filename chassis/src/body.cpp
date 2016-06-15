@@ -46,6 +46,9 @@ uint8 read_distance (AnalogIn* side);
 /*! \brief handle of error condition: switch all hardware off
  */
 void stop_body() {
+  light_l = 0;
+  light_c = 0;
+  light_r = 0;
 }
 
 /*** GLOBAL FUNTIONS ***/

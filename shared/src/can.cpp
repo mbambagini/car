@@ -111,6 +111,10 @@ void can_rx () {
           can_cmd_time.payload.buf[1] = message.data[1];
           can_cmd_time.payload.buf[2] = message.data[2];
           can_cmd_time.payload.buf[3] = message.data[3];
+          can_cmd_time.payload.buf[4] = message.data[4];
+          can_cmd_time.payload.buf[5] = message.data[5];
+          can_cmd_time.payload.buf[6] = message.data[6];
+          can_cmd_time.payload.buf[7] = message.data[7];
           can_cmd_time.flag = CAN_FLAG_RECEIVED;
         }
         break;
@@ -158,29 +162,35 @@ void can_rx () {
 
 void can_tx () {
   /** periodic messages */
-  if ((can_message_list & NET_TX_CMD_BODY) && (can_cmd_body.flag == 0)) {
-    wait(0.002); //wait 2 milliseconds between 2 consecutive transmissions
-    if (!can.write(CANMessage(CAN_CMD_BODY_ID, (char*)(&(can_cmd_body.payload.buf)), CAN_CMD_PAYLOAD_BODY)))
-      can_tx_error_counter++;
-    can_cmd_body.flag = CAN_CMD_BODY_PERIOD;
+  if (can_message_list & NET_TX_CMD_BODY) {
+    if (can_cmd_body.flag == 0) {
+      wait(0.002); //wait 2 milliseconds between 2 consecutive transmissions
+      if (!can.write(CANMessage(CAN_CMD_BODY_ID, (char*)(&(can_cmd_body.payload.buf)), CAN_CMD_PAYLOAD_BODY)))
+        can_tx_error_counter++;
+      can_cmd_body.flag = CAN_CMD_BODY_PERIOD;
+    }
+    can_cmd_body.flag--;
   }
-  can_cmd_body.flag--;
 
-  if ((can_message_list & NET_TX_STS_BODY) && (can_sts_body.flag == 0)) {
-    wait(0.002); //wait 2 milliseconds between 2 consecutive transmissions
-    if (!can.write(CANMessage(CAN_STS_BODY_ID, (char*)(&(can_sts_body.payload.buf)), CAN_STS_PAYLOAD_BODY)))
-      can_tx_error_counter++;
-    can_sts_body.flag = CAN_STS_BODY_PERIOD;
+  if (can_message_list & NET_TX_STS_BODY) {
+    if (can_sts_body.flag == 0) {
+      wait(0.002); //wait 2 milliseconds between 2 consecutive transmissions
+      if (!can.write(CANMessage(CAN_STS_BODY_ID, (char*)(&(can_sts_body.payload.buf)), CAN_STS_PAYLOAD_BODY)))
+        can_tx_error_counter++;
+      can_sts_body.flag = CAN_STS_BODY_PERIOD;
+    }
+    can_sts_body.flag--;
   }
-  can_sts_body.flag--;
 
-  if ((can_message_list & NET_TX_CMD_ENGINE) && (can_cmd_engine.flag == 0)) {
-    wait(0.001); //wait 1 millisecond between 2 consecutive transmissions
-    if (!can.write(CANMessage(CAN_CMD_ENGINE_ID, (char*)(&(can_cmd_engine.payload.buf)), CAN_CMD_PAYLOAD_ENGINE)))
-      can_tx_error_counter++;
-    can_cmd_engine.flag = CAN_CMD_ENGINE_PERIOD;
+  if (can_message_list & NET_TX_CMD_ENGINE) {
+    if (can_cmd_engine.flag == 0) {
+      wait(0.001); //wait 1 millisecond between 2 consecutive transmissions
+      if (!can.write(CANMessage(CAN_CMD_ENGINE_ID, (char*)(&(can_cmd_engine.payload.buf)), CAN_CMD_PAYLOAD_ENGINE)))
+        can_tx_error_counter++;
+      can_cmd_engine.flag = CAN_CMD_ENGINE_PERIOD;
+    }
+    can_cmd_engine.flag--;
   }
-  can_cmd_engine.flag--;
 
 /*
   if ((can_message_list & NET_TX_CMD_CAMERA) && (can_cmd_camera.flag == 0)) {
