@@ -57,6 +57,11 @@
 #include <string.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <termios.h> 
 
 
 WINDOW* init_window ();
@@ -66,7 +71,9 @@ int row, col;
 
 pthread_t thread_input;
 pthread_t thread_screen;
+pthread_t thread_comm;
 
+int fd; // file description for the serial port
 
 struct car_t {
   bool hit_front;
@@ -90,12 +97,14 @@ struct car_t {
 } car;
 
 
+pthread_mutex_t car_mutex;
+
 
 void* function_input_reader (void* p) {
   WINDOW* w = (WINDOW*)p;
   while(1) {
     int c = wgetch(w);
-
+    pthread_mutex_lock(&car_mutex);
     switch(c) {
        case '\\': car.speed =  0; break;
        case '1': car.speed =  10; break;
@@ -135,6 +144,7 @@ void* function_input_reader (void* p) {
 */
        default:;
     };
+    pthread_mutex_unlock(&car_mutex);
   }
   return NULL;
 }
@@ -147,6 +157,10 @@ void* function_output_screen (void* p) {
   while(1) {
       int row = 1;
 
+      pthread_mutex_lock(&car_mutex);
+      car_t car_local = car;
+      pthread_mutex_unlock(&car_mutex);
+
       clear();
       attron(A_BOLD | A_UNDERLINE);
       mvprintw(row++, 2, "REMOTE CONTROLLER CAR - PC side");
@@ -158,23 +172,28 @@ void* function_output_screen (void* p) {
       attron(A_BOLD | A_UNDERLINE);
       mvprintw(row++, 2, "ECM", i);
       attroff(A_BOLD | A_UNDERLINE);
-      mvprintw(row++, 2, "Speed: %d", car.forward?car.speed:-car.speed);
-      mvprintw(row++, 2, "Steering: %d", car.steering);
-      if (car.breaking)
+      mvprintw(row++, 2, "Speed: %d", car_local.forward ? car_local.speed :
+                                                             -car_local.speed);
+      mvprintw(row++, 2, "Steering: %d", car_local.steering);
+      if (car_local.breaking)
           attron(COLOR_PAIR(1));
-      mvprintw(row++, 2, "Breaking: %d", car.breaking);
-      if (car.breaking)
+      mvprintw(row++, 2, "Breaking: %d", car_local.breaking);
+      if (car_local.breaking)
           attroff(COLOR_PAIR(1));
       attron(COLOR_PAIR(2));
-      mvprintw(row++, 2, "Light sensor: %s", car.light_sens?"bright":"dark");
+      mvprintw(row++, 2, "Light sensor: %s", 
+                                      car_local.light_sens? "bright" : "dark");
       attroff(COLOR_PAIR(2));
       row++;
 
       attron(A_BOLD | A_UNDERLINE);
       mvprintw(row++, 2, "BCM");
       attroff(A_BOLD | A_UNDERLINE);
-      mvprintw(row++, 2, "Lights (left, center, right): %d %d %d", car.light_l, car.light_c, car.light_r);
-      mvprintw(row++, 2, "Hit status (front, left, right, rear): %d %d %d %d", car.hit_front, car.hit_left, car.hit_right, car.hit_rear);
+      mvprintw(row++, 2, "Lights (left, center, right): %d %d %d",
+                      car_local.light_l, car_local.light_c, car_local.light_r);
+      mvprintw(row++, 2, "Hit status (front, left, right, rear): %d %d %d %d",
+                                      car_local.hit_front, car_local.hit_left,
+                                      car_local.hit_right, car_local.hit_rear);
       row++;
 
       attron(A_BOLD | A_UNDERLINE);
@@ -192,6 +211,73 @@ void* function_output_screen (void* p) {
       refresh();
       usleep(100000);
   }
+  return NULL;
+}
+
+
+
+void* function_comm (void* p) {
+
+  while(1) {
+
+    pthread_mutex_lock(&car_mutex);
+    car_t car_local = car;
+    pthread_mutex_unlock(&car_mutex);
+
+    int count = 1;
+
+    char array[6] = {0, 0, 0, 0, 0, 0};
+    // steering byte
+    array[0] = array[0] | 0x01;
+    array[1] = car_local.steering;
+    count++;
+    // engine power byte
+    array[0] = array[0] | 0x02;
+    array[2] = car_local.speed;
+    if (car_local.forward == false)
+      array[2] = -array[2];
+    count++;
+    // echo ECM byte
+    array[0] = array[0] | 0x04;
+    // echo BCM byte
+    array[0] = array[0] | 0x08;
+    // command byte
+    array[0] = array[0] | 0x10;
+    array[5] = array[5] |  car_local.light_r;
+    array[5] = array[5] | (car_local.light_c << 1);
+    array[5] = array[5] | (car_local.light_l << 2);
+    array[5] = array[5] | (car_local.breaking << 3);
+    count++;
+
+    write(fd, array, count);  //Send data
+    usleep(1000000); //1 sec
+  }
+
+  return 0;
+}
+
+bool init_hw () {
+  fd = open("/dev/ttyS0", O_RDWR | O_NOCTTY | O_NDELAY);
+	
+  if(fd == -1) {
+    //perror("open_port: Unable to open /dev/ttyS0 - ");
+    printf("open_port: Unable to open /dev/ttyS0. \n");
+  } else {
+    fcntl(fd, F_SETFL, 0);
+    printf("port is open.\n");
+  }
+
+  struct termios port_settings;      // structure to store the port settings in
+
+  cfsetispeed(&port_settings, B115200);    // set baud rates
+  cfsetospeed(&port_settings, B115200);
+
+  port_settings.c_cflag &= ~PARENB;    // set no parity, stop bits, data bits
+  port_settings.c_cflag &= ~CSTOPB;
+  port_settings.c_cflag &= ~CSIZE;
+  port_settings.c_cflag |= CS8;
+	
+  tcsetattr(fd, TCSANOW, &port_settings);    // apply the settings to the port
 }
 
 int main() {
@@ -204,9 +290,11 @@ int main() {
 
   pthread_create(&thread_input, NULL, function_input_reader, (void*)w);
   pthread_create(&thread_screen, NULL, function_output_screen, (void*)w);
+  pthread_create(&thread_comm, NULL, function_comm, NULL);
 
   pthread_join(thread_input, NULL);
   pthread_join(thread_screen, NULL);
+  pthread_join(thread_comm, NULL);
 
   close_window();
 
