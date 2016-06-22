@@ -69,9 +69,12 @@ void close_window ();
 
 int row, col;
 
+bool conn_error;
+
 pthread_t thread_input;
 pthread_t thread_screen;
-pthread_t thread_comm;
+pthread_t thread_tx;
+pthread_t thread_rx;
 
 int fd; // file description for the serial port
 
@@ -93,7 +96,7 @@ struct car_t {
   bool light_c;
   bool light_l;
 
-  bool light_sens;   
+  bool light_sens;
 } car;
 
 
@@ -206,6 +209,14 @@ void* function_output_screen (void* p) {
       mvprintw(row++, 2, "TIME");
       attroff(A_BOLD | A_UNDERLINE);
       mvprintw(row++, 2, "%s", "off");
+      row++;
+
+      if (conn_error) {
+        attron(COLOR_PAIR(2));
+        mvprintw(row++, 2, "NOT CONNECTED");
+        attroff(COLOR_PAIR(2));
+        row++;
+      }
 
       i++;
       refresh();
@@ -215,8 +226,8 @@ void* function_output_screen (void* p) {
 }
 
 
-
-void* function_comm (void* p) {
+/*
+void* function_tx (void* p) {
 
   while(1) {
 
@@ -228,73 +239,99 @@ void* function_comm (void* p) {
 
     char array[6] = {0, 0, 0, 0, 0, 0};
     // steering byte
-    array[0] = array[0] | 0x01;
-    array[1] = car_local.steering;
-    count++;
+    array[0] = car_local.steering;
     // engine power byte
-    array[0] = array[0] | 0x02;
-    array[2] = car_local.speed;
+    array[1] = car_local.speed;
     if (car_local.forward == false)
-      array[2] = -array[2];
-    count++;
+      array[1] = -array[1];
     // echo ECM byte
-    array[0] = array[0] | 0x04;
+    array[2] = 0;
     // echo BCM byte
-    array[0] = array[0] | 0x08;
+    array[3] = 0;
     // command byte
-    array[0] = array[0] | 0x10;
-    array[5] = array[5] |  car_local.light_r;
-    array[5] = array[5] | (car_local.light_c << 1);
-    array[5] = array[5] | (car_local.light_l << 2);
-    array[5] = array[5] | (car_local.breaking << 3);
-    count++;
+    array[4] = 0;
+    array[4] = array[4] |  car_local.light_r;
+    array[4] = array[4] | (car_local.light_c << 1);
+    array[4] = array[4] | (car_local.light_l << 2);
+    array[4] = array[4] | (car_local.breaking << 3);
+    // end
+    array[5] = '\n';
 
-    write(fd, array, count);  //Send data
-    usleep(1000000); //1 sec
+    write(fd, array, 6);  // send data
+    usleep(1000000); // wait 1 sec
+  }
+
+  return 0;
+}
+*/
+
+void* function_rx (void* p) {
+
+  char buffer[10];
+  char array[10];
+
+  while(1) {
+    array[0] = 0xBC;
+    write(fd, array, 1);  // send data
+
+    char r = 0;
+    int status = 0;
+    while (true) {
+      int num = read(fd, buffer, 2);
+      if (num == -1) 
+        continue;
+      if (num == 0)
+        continue;
+      r = buffer[0];
+//      printf("TEST %d %d\n", num, buffer[0]);
+      status = 1;
+      break;
+    }
+
+    conn_error = false;
+
+    pthread_mutex_lock(&car_mutex);
+    car.hit_front =   r & 0x01;
+    car.hit_left =   (r & 0x02) ? 1 : 0;
+    car.hit_right =  (r & 0x04) ? 1 : 0;
+    car.hit_rear =   (r & 0x08) ? 1 : 0;
+    car.light_sens = (r & 0x10) ? 1 : 0;
+    pthread_mutex_unlock(&car_mutex);
+    usleep(1000000); // wait 1 sec
   }
 
   return 0;
 }
 
-bool init_hw () {
-  fd = open("/dev/ttyS0", O_RDWR | O_NOCTTY | O_NDELAY);
-	
-  if(fd == -1) {
-    //perror("open_port: Unable to open /dev/ttyS0 - ");
-    printf("open_port: Unable to open /dev/ttyS0. \n");
-  } else {
-    fcntl(fd, F_SETFL, 0);
-    printf("port is open.\n");
-  }
 
-  struct termios port_settings;      // structure to store the port settings in
-
-  cfsetispeed(&port_settings, B115200);    // set baud rates
-  cfsetospeed(&port_settings, B115200);
-
-  port_settings.c_cflag &= ~PARENB;    // set no parity, stop bits, data bits
-  port_settings.c_cflag &= ~CSTOPB;
-  port_settings.c_cflag &= ~CSIZE;
-  port_settings.c_cflag |= CS8;
-	
-  tcsetattr(fd, TCSANOW, &port_settings);    // apply the settings to the port
+bool init_hw (const char* filename) {
+  fd = open(filename, O_RDWR | O_NOCTTY | O_NONBLOCK);
+  if(fd == -1)
+    return false;
+  return true;
 }
 
-int main() {
-  WINDOW *w;
 
-  char *mesg;
+int main(int argc, char* argv[]) {
+  WINDOW *w;
+  
+  if (argc == 1)
+    return -1;  
 
   memset(&car, 0, sizeof(car_t));
   w = init_window();
 
-  pthread_create(&thread_input, NULL, function_input_reader, (void*)w);
+  conn_error = init_hw(argv[1]);
+
+  pthread_create(&thread_input,  NULL, function_input_reader, (void*)w);
   pthread_create(&thread_screen, NULL, function_output_screen, (void*)w);
-  pthread_create(&thread_comm, NULL, function_comm, NULL);
+//  pthread_create(&thread_tx,     NULL, function_tx, NULL);
+  pthread_create(&thread_rx,     NULL, function_rx, NULL);
 
   pthread_join(thread_input, NULL);
   pthread_join(thread_screen, NULL);
-  pthread_join(thread_comm, NULL);
+//  pthread_join(thread_tx, NULL);
+  pthread_join(thread_rx, NULL);
 
   close_window();
 
