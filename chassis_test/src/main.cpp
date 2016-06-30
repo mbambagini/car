@@ -107,7 +107,6 @@ void sender(void const* t) {
       diag_n_sent++;
     }
 
-    
     if ((counter % TIME_COUNTER_TICK) == 0) {
       can_cmd_time.payload.msg.time = time(NULL);
       can_cmd_time.flag = CAN_FLAG_SEND;

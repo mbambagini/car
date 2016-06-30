@@ -4,199 +4,157 @@
 #include "net.hpp"
 #include "can.hpp"
 
-
 Serial pc(USBTX, USBRX); // tx, rx
 
-
-DigitalOut led1(LED1);
-DigitalOut led2(LED2);
-DigitalOut led3(LED3);
-
-
-#define RECEIVER_PERIOD_MS   500 //milliseconds
-#define SENDER_PERIOD_MS     800 //milliseconds
-
-
-//void sender(void const* t);
-void receiver(void const* t);
-
+void receiver();
 
 int main() {
-
-  led1 = 0;
-  led2 = 0;
-
   set_time(0);
-
-//  pc.baud(9600);
-
   uint32 message_mask = NET_TX_CMD_BODY | NET_RX_STS_BODY | 
                         NET_TX_CMD_ENGINE |
                         NET_TX_CMD_DIAG | NET_RX_STS_DIAG | 
                         NET_TX_CMD_TIME;
   init_can(message_mask);
 
-//  Thread* th_txer = new Thread(sender,      100, SENDER_PERIOD_MS,   NULL, osPriorityHigh);
-  Thread* th_rxer = new Thread(receiver,    100, RECEIVER_PERIOD_MS, NULL, osPriorityHigh);
-  Thread* th_can  = new Thread(thread_can,   12, CAN_THREAD_PERIOD,  NULL, osPriorityRealtime);
+  Thread* th_can = new Thread(thread_can, 12, CAN_THREAD_PERIOD, NULL,
+                                                           osPriorityRealtime);
 
-  while(1) {};
+  receiver();
+
+  while(1);
+  return 0;
 }
 
-/*
-void sender (void const* t) {
-  unsigned int counter = 0;
 
-  while(1) {
+void receiver () {
+  char c;
+  char buffer[10];
+  unsigned int ui, cnt;
+  char r;
+  unsigned int nToSend;
 
-    char buffer[5] = {0, 0, 0, 0, 0};
-    unsigned int len = 1;
+  while (1) {
+    if (pc.readable() == 0)
+      continue;
 
-    if (can_msg_is_missing(CAN_MISSING_STS_BODY_ID))
-      buffer[0] = 0x80;
-    else {
-      if (can_sts_body.flag == CAN_FLAG_RECEIVED) {
-        can_sts_body_payload_t x = can_sts_body.payload;
-        buffer[0] = x.msg.hit_front;
-        buffer[0] |= x.msg.hit_rear << 1;
-        buffer[0] |= x.msg.hit_left << 2;
-        buffer[0] |= x.msg.hit_right << 3;
-        buffer[0] |= x.msg.light_sens << 4;
-        buffer[1] = x.msg.eye_l;
-        buffer[2] = x.msg.eye_r;
-      }
+    // read and parse command 
+    c = pc.getc();
+
+    nToSend = 0;
+    switch(c) {
+      case 0x10:
+        goto ACTION_STATUS_BCM;
+      case 0x11:
+        goto ACTION_STATUS_BCM_EYE_R;
+      case 0x12:
+        goto ACTION_STATUS_BCM_EYE_L;
+      case 0x13:
+        goto ACTION_COMMAND_BCM;
+
+      case 0x20:
+        goto ACTION_ENGINE_STEERING;
+      case 0x21:
+        goto ACTION_ENGINE_POWER;
+
+      case 0x30:
+        goto ACTION_COMMAND_ECHO_BCM;
+      case 0x31:
+        goto ACTION_COMMAND_ECHO_ECM;
+      case 0x32:
+        goto ACTION_STATUS_DIAG;
     }
+    goto ACTION_EXIT;
 
+ACTION_STATUS_BCM:
+    buffer[0] = can_sts_body.payload.msg.light_sens ? 1 : 0;
+    buffer[0]  = buffer[0] << 1;
+    buffer[0] += can_sts_body.payload.msg.hit_front ? 1 : 0;
+    buffer[0]  = buffer[0] << 1;
+    buffer[0] += can_sts_body.payload.msg.hit_rear ? 1 : 0;
+    buffer[0]  = buffer[0] << 1;
+    buffer[0] += can_sts_body.payload.msg.hit_left ? 1 : 0;
+    buffer[0]  = buffer[0] << 1;
+    buffer[0] += can_sts_body.payload.msg.hit_right ? 1 : 0;
+    buffer[0] |= 0x80;
+    nToSend = 1;
+    goto ACTION_EXIT;
+
+ACTION_COMMAND_BCM:
+    while (pc.readable() == 0);
+    r = pc.getc();
+    can_cmd_body.payload.msg.light_r = (r & 0x02) ? 1 : 0;
+    can_cmd_body.payload.msg.light_c = (r & 0x04) ? 1 : 0;
+    can_cmd_body.payload.msg.light_l = (r & 0x08) ? 1 : 0;
+    can_cmd_engine.payload.msg.breaking = (r & 0x01) ? 1 : 0;    
+    goto ACTION_EXIT;
+
+ACTION_STATUS_BCM_EYE_R:
+    buffer[0]  = can_sts_body.payload.msg.eye_r;
+    buffer[0] |= 0x80;
+    nToSend = 1;
+    goto ACTION_EXIT;
+
+ACTION_STATUS_BCM_EYE_L:
+    buffer[0]  = can_sts_body.payload.msg.eye_l;
+    buffer[0] |= 0x80;
+    nToSend = 1;
+    goto ACTION_EXIT;
+
+ACTION_ENGINE_STEERING:
+    while (pc.readable() == 0);
+    r = pc.getc();
+    can_cmd_engine.payload.msg.steering = (r / 2) + 50;
+    goto ACTION_EXIT;
+
+ACTION_ENGINE_POWER:
+    while (pc.readable() == 0);
+    r = pc.getc();
+    can_cmd_engine.payload.msg.direction = r > 0;
+    can_cmd_engine.payload.msg.power = abs(r);
+    goto ACTION_EXIT;
+
+ACTION_COMMAND_ECHO_BCM:
+    while (pc.readable() == 0);
+    r = pc.getc();
+    can_cmd_diag.payload.msg.cmd = 0x0A0A;
+    can_cmd_diag.payload.msg.data = r;
+    can_cmd_diag.flag = CAN_FLAG_SEND;
+    goto ACTION_EXIT;
+
+ACTION_COMMAND_ECHO_ECM:
+    while (pc.readable() == 0);
+    r = pc.getc();
+    can_cmd_diag.payload.msg.cmd = 0x0A0B;
+    can_cmd_diag.payload.msg.data = r;
+    can_cmd_diag.flag = CAN_FLAG_SEND;
+    goto ACTION_EXIT;
+
+ACTION_STATUS_DIAG:
+    ui = 0;
     if (can_sts_diag.flag == CAN_FLAG_RECEIVED) {
-      can_sts_diag_payload_t x = can_sts_diag.payload;
-      buffer[3] = x.msg.data;
-      len++;
+      ui = can_sts_diag.payload.msg.data;
       can_sts_diag.flag = CAN_FLAG_EMPTY;
     }
+    buffer[0] = ui & 0x000000ff;
+    ui = ui >> 8;
+    buffer[1] = ui & 0x000000ff;
+    ui = ui >> 8;
+    buffer[2] = ui & 0x000000ff;
+    ui = ui >> 8;
+    buffer[3] = ui & 0x000000ff;
+    nToSend = 4;
+    goto ACTION_EXIT;
 
-    buffer[4] = '\n';
-
-    int cnt = 0;
-    while (cnt < 5) {
-      if (!pc.writeable())
-        continue;
-      pc.putc(buffer[cnt]);
-      cnt++;
+ACTION_EXIT:
+    if (nToSend > 0) {
+      buffer[nToSend++] = '\n';
+      cnt = 0;
+      while (cnt < nToSend) {
+        if (!pc.writeable())
+          continue;
+        pc.putc(buffer[cnt++]);
+      }
     }
-
-    led1 = counter % 2;
-    counter++;
-
-    osThreadEndPeriod();
-  }
-}
-
-
-void receiver (void const* t) {
-  unsigned int counter = 0;
-  char c;
-  int expected = -1;
-
-  while (1) {
-    if (pc.readable() == 0)
-      continue;
-
-    c = pc.getc();
-
-    if (c == '\n') {
-      expected = 0;
-      continue;
-    }
-
-    switch (expected) {
-      case 0:
-        can_cmd_engine.payload.msg.steering = c / 2 + 50;
-        break;
-      case 1:
-        can_cmd_engine.payload.msg.direction = c > 0;
-        can_cmd_engine.payload.msg.power = c / 2 + 50;
-        break;
-      case 2:
-        if (c != 0) {
-          can_cmd_diag.payload.msg.cmd = 0x0A0A;
-          can_cmd_diag.payload.msg.data = c;
-          can_cmd_diag.flag = CAN_FLAG_SEND;
-        }
-        break;
-      case 3:
-        if (c != 0) {
-          can_cmd_diag.payload.msg.cmd = 0x0A0B;
-          can_cmd_diag.payload.msg.data = c;
-          can_cmd_diag.flag = CAN_FLAG_SEND;
-        }
-        break;
-      case 4:
-        can_cmd_body.payload.msg.light_r = (c & 0x01) ? 1 : 0;
-        can_cmd_body.payload.msg.light_c = (c & 0x02) ? 1 : 0;
-        can_cmd_body.payload.msg.light_l = (c & 0x04) ? 1 : 0;
-        can_cmd_engine.payload.msg.breaking = (c & 0x08) ? 1 : 0;
-        break;
-    }
-    expected++;
-*/
-/*
-end_cycle:
-    total--;
-    if (total == 0) {
-      total = -1;
-      led2 = counter % 2;
-      counter++;
-      osThreadEndPeriod();
-    }
-*/
-/*
-  }
-}
-*/
-
-void receiver (void const* t) {
-  char c;
-  char buffer[2];
-  static int count = 0;
-  static int count2 = 0;
-
-  while (1) {
-    if (pc.readable() == 0)
-      continue;
-
-bool toSend = false;
-
-    c = pc.getc();
-    count2++;
-    led1 = count & 2;
-    can_sts_body_payload_t x = can_sts_body.payload;
-led3 = x.msg.light_sens;
-    switch(c) {
-      case 0xBC:
-        count++;
-        led2 = count & 2;
-        buffer[0]  = x.msg.light_sens;
-        buffer[0]  = buffer[0] << 1;
-        buffer[0] += x.msg.hit_front;
-        buffer[0]  = buffer[0] << 1;
-        buffer[0] += x.msg.hit_rear;
-        buffer[0]  = buffer[0] << 1;
-        buffer[0] += x.msg.hit_left;
-        buffer[0]  = buffer[0] << 1;
-        buffer[0] += x.msg.hit_right;
-toSend = true;
-        break;
-    }
-    buffer[1] = '\n';
-if (toSend) {
-    int cnt = 0;
-    while (cnt < 2) {
-      if (!pc.writeable())
-        continue;
-      pc.putc(buffer[cnt]);
-      cnt++;
-    }
-}
   }
 }
 

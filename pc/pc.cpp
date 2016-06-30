@@ -1,8 +1,5 @@
 //clear; g++ -lncurses -lpthread test.cpp -o test
 
-//char str[80];
-//getstr(str);
-
 /*
  keys:
  -  q: toggle the right on the left
@@ -27,31 +24,7 @@
  - A: echo ECM
  - B: echo BCM
  - t: update time
-
- message:
- - byte 0:  presence byte
-   - bit 0: steering byte presence
-   - bit 1: engine power byte presence
-   - bit 2: echo ECM byte presence
-   - bit 3: echo BCM byte presence
-   - bit 4: command byte presence
-   - bit 5: 0
-   - bit 6: 0
-   - bit 7: 0
- - byte 1: steering byte [-100: +100]
- - byte 2: engine power byte [-100: +100]
- - byte 3: echo ECM byte
- - byte 4: echo BCM byte
- - byte 5: command byte
-   - bit 0: light right command
-   - bit 1: light center command
-   - bit 2: light left command
-   - bit 3: break command
-   - bit 4: 0
-   - bit 5: 0
-   - bit 6: 0
-   - bit 7: 0
- */
+*/
 
 #include <ncurses.h>
 #include <string.h>
@@ -69,39 +42,240 @@ void close_window ();
 
 int row, col;
 
-bool conn_error;
-
 pthread_t thread_input;
 pthread_t thread_screen;
-pthread_t thread_tx;
-pthread_t thread_rx;
+pthread_t thread_comm;
 
-int fd; // file description for the serial port
+// IO port descriptor
+int fd;
 
+// this struct and object contains the actual state of the car
 struct car_t {
   bool hit_front;
   bool hit_left;
   bool hit_right;
   bool hit_rear;
-
   char speed;
   bool forward;
   char steering;
   bool breaking;
-
   char echo_bcm;
   char echo_ecm;
-
+  unsigned char eye_l;
+  unsigned char eye_r;
   bool light_r;
   bool light_c;
   bool light_l;
-
   bool light_sens;
 } car;
 
-
+// mutex to access car
 pthread_mutex_t car_mutex;
 
+
+/*****************************************************************************
+ * Thread declaration
+ *****************************************************************************/
+
+// this function is the thread which takes the input from the UI
+void* function_input_reader (void* p);
+
+// this function shows car state on the screen
+void* function_output_screen (void* p);
+
+// this function handles the communication with the gateway and updates the
+// car state
+void* function_comm (void* p);
+
+/*****************************************************************************
+ * Init and closing function declaration
+ *****************************************************************************/
+
+// initialize comm device
+bool init_hw (const char* filename);
+
+// init UI
+WINDOW* init_window ();
+
+// close UI
+void close_window();
+
+
+/*****************************************************************************
+ * Main function
+ * the first argument must be the device that communicates with the gateway
+ *****************************************************************************/
+
+int main(int argc, char* argv[]) {
+  WINDOW *w;
+  
+  if (argc == 1)
+    return -1;  
+
+  memset(&car, 0, sizeof(car_t));
+  w = init_window();
+
+  init_hw(argv[1]);
+
+  pthread_create(&thread_input,  NULL, function_input_reader, (void*)w);
+  pthread_create(&thread_screen, NULL, function_output_screen, (void*)w);
+  pthread_create(&thread_comm,     NULL, function_comm, NULL);
+
+  pthread_join(thread_input, NULL);
+  pthread_join(thread_screen, NULL);
+  pthread_join(thread_comm, NULL);
+
+  close_window();
+
+  return 0;
+}
+
+
+/*****************************************************************************
+ * Communication callbacks and data
+ *****************************************************************************/
+
+typedef void (*data_handler_t)(char *b);
+
+struct cmd_t {
+  char code;
+  char n_rx_bytes;
+  char n_tx_bytes;
+  data_handler_t tx_f;
+  data_handler_t rx_f;
+  cmd_t(char c, char n_rx, char n_tx, data_handler_t rx_fun,
+        data_handler_t tx_fun) : code(c), n_rx_bytes(n_rx), n_tx_bytes(n_tx),
+                                 rx_f(rx_fun), tx_f(tx_fun) {}
+};
+
+unsigned char compute_filter(int *id, unsigned char *b, unsigned char val) {
+  unsigned char ret;
+
+  b[(*id) % 10] = val & 0x7f;
+  *id = *id + 1;
+
+  double sum = b[0];
+  for (int i = 1; i < 10; i++)
+      sum += b[i];
+   sum = sum / 10;
+   ret = (unsigned char)sum;
+}
+
+void callback_eye_right_bcm (char *b) {
+  static unsigned char arr[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+  static int id = 0;
+
+  unsigned char val = compute_filter(&id, arr, b[0]);
+
+  pthread_mutex_lock(&car_mutex);
+  car.eye_r = val;
+  pthread_mutex_unlock(&car_mutex);
+}
+
+void callback_eye_left_bcm (char *b) {
+  static unsigned char arr[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+  static int id = 0;
+
+  unsigned char val = compute_filter(&id, arr, b[0]);
+
+  pthread_mutex_lock(&car_mutex);
+  car.eye_l = val;
+  pthread_mutex_unlock(&car_mutex);
+}
+
+void callback_command_bcm (char *b) {
+  pthread_mutex_lock(&car_mutex);
+  b[0] = 0x80;
+  if (car.breaking)
+    b[0] |=  0x01;
+  if (car.light_r)
+    b[0] |=  0x02;
+  if (car.light_c)
+    b[0] |=  0x04;
+  if (car.light_l)
+    b[0] |=  0x08;
+  pthread_mutex_unlock(&car_mutex);
+}
+
+void callback_status_bcm (char *b) {
+  pthread_mutex_lock(&car_mutex);
+  car.hit_front =   b[0] & 0x01;
+  car.hit_left =   (b[0] & 0x02) ? 1 : 0;
+  car.hit_right =  (b[0] & 0x04) ? 1 : 0;
+  car.hit_rear =   (b[0] & 0x08) ? 1 : 0;
+  car.light_sens = (b[0] & 0x10) ? 1 : 0;
+  pthread_mutex_unlock(&car_mutex);
+}
+
+void callback_steering_ecm (char *b) {
+  char v;
+  pthread_mutex_lock(&car_mutex);
+  v = car.steering;
+  pthread_mutex_unlock(&car_mutex);
+  b[0] = v==10 ? 11 : v;
+}
+void callback_engine_ecm (char *b) {
+  char v;
+  pthread_mutex_lock(&car_mutex);
+  v = car.speed * car.forward;
+  pthread_mutex_unlock(&car_mutex);
+  b[0] = v==10 ? 11 : v;
+}
+
+cmd_t cmds[] = { //BCM:
+                cmd_t(0x10, 1, 0, callback_status_bcm, NULL),    //status
+                cmd_t(0x11, 1, 0, callback_eye_right_bcm, NULL), //right eye
+                cmd_t(0x12, 1, 0, callback_eye_left_bcm, NULL),  //left eye
+                cmd_t(0x13, 0, 1, NULL, callback_command_bcm),   //commands
+                //ECM:
+                cmd_t(0x20, 0, 1, callback_steering_ecm, NULL), //steering
+                cmd_t(0x21, 0, 1, callback_engine_ecm, NULL),   //engine
+                //DIAG:
+                //cmd_t(0x30, 0, 1, callback_echo_bcm, NULL), //echo bcm
+                //cmd_t(0x31, 0, 1, callback_echo_ecm, NULL), //echo ecm
+                //cmd_t(0x32, 1, 0, NULL, callback_diag_res), //diag response
+               };
+
+
+/*****************************************************************************
+ * Initialization and termination functions
+ *****************************************************************************/
+
+bool init_hw (const char* filename) {
+  fd = open(filename, O_RDWR | O_NOCTTY | O_NONBLOCK);
+  if(fd == -1)
+    return false;
+  return true;
+}
+
+WINDOW* init_window () {
+  WINDOW* w;
+
+  initscr();     // Start curses mode
+  clear();       // Clear windows
+  cbreak();      // No buffer data but handle signals - raw otherwise
+  noecho();      // No character echo
+  start_color(); // Start colors
+  init_pair(1, COLOR_RED, COLOR_WHITE);
+  init_pair(2, COLOR_BLUE, COLOR_BLACK);
+  getmaxyx(stdscr, row, col);
+  w = newwin(col, row, 0, 0);
+  keypad(w, TRUE);  // Enable Fx and keys
+  refresh();     // Clear windows
+
+  return w;
+}
+
+void close_window() {
+  clrtoeol();
+  refresh();
+  endwin();
+}
+
+
+/*****************************************************************************
+ * Thread functions
+ *****************************************************************************/
 
 void* function_input_reader (void* p) {
   WINDOW* w = (WINDOW*)p;
@@ -120,10 +294,8 @@ void* function_input_reader (void* p) {
        case '8': car.speed =  80; break;
        case '9': car.speed =  90; break;
        case '0': car.speed = 100; break;
-
        case KEY_UP:   car.forward = 1; break;
        case KEY_DOWN: car.forward = 0; break;
-
        case KEY_RIGHT:
            if (car.steering <= 99)
                car.steering++;
@@ -132,26 +304,15 @@ void* function_input_reader (void* p) {
            if (car.steering >= -99)
                car.steering--;
            break;
-
        case 's':   car.breaking = !car.breaking; break;
-
        case 'q':   car.light_l = !car.light_l; break;
        case 'w':   car.light_c = !car.light_c; break;
        case 'e':   car.light_r = !car.light_r; break;
-/*
-       case KEY_F(4):  mesg = "F4"; break;
-       case KEY_F(5):  mesg = "F5"; break;
-       case KEY_F(6):  mesg = "F6"; break;
-       case 'a':       attron(A_BOLD | A_DIM | A_UNDERLINE | A_REVERSE);  break;
-       case 's':       attroff(A_BOLD | A_DIM | A_UNDERLINE | A_REVERSE); break;
-*/
-       default:;
     };
     pthread_mutex_unlock(&car_mutex);
   }
   return NULL;
 }
-
 
 void* function_output_screen (void* p) {
   WINDOW* w = (WINDOW*)p;
@@ -161,7 +322,7 @@ void* function_output_screen (void* p) {
       int row = 1;
 
       pthread_mutex_lock(&car_mutex);
-      car_t car_local = car;
+      car_t car_ = car;
       pthread_mutex_unlock(&car_mutex);
 
       clear();
@@ -175,28 +336,27 @@ void* function_output_screen (void* p) {
       attron(A_BOLD | A_UNDERLINE);
       mvprintw(row++, 2, "ECM", i);
       attroff(A_BOLD | A_UNDERLINE);
-      mvprintw(row++, 2, "Speed: %d", car_local.forward ? car_local.speed :
-                                                             -car_local.speed);
-      mvprintw(row++, 2, "Steering: %d", car_local.steering);
-      if (car_local.breaking)
+      mvprintw(row++, 2, "Speed: %d", car_.forward ? car_.speed : -car_.speed);
+      mvprintw(row++, 2, "Steering: %d", car_.steering);
+      if (car_.breaking)
           attron(COLOR_PAIR(1));
-      mvprintw(row++, 2, "Breaking: %d", car_local.breaking);
-      if (car_local.breaking)
+      mvprintw(row++, 2, "Breaking: %d", car_.breaking);
+      if (car_.breaking)
           attroff(COLOR_PAIR(1));
       attron(COLOR_PAIR(2));
       mvprintw(row++, 2, "Light sensor: %s", 
-                                      car_local.light_sens? "bright" : "dark");
+                                           car_.light_sens? "bright" : "dark");
       attroff(COLOR_PAIR(2));
       row++;
 
       attron(A_BOLD | A_UNDERLINE);
       mvprintw(row++, 2, "BCM");
       attroff(A_BOLD | A_UNDERLINE);
-      mvprintw(row++, 2, "Lights (left, center, right): %d %d %d",
-                      car_local.light_l, car_local.light_c, car_local.light_r);
+      mvprintw(row++, 2, "Lights (left, center, right): %d %d %d", 
+                                     car_.light_l, car_.light_c, car_.light_r);
       mvprintw(row++, 2, "Hit status (front, left, right, rear): %d %d %d %d",
-                                      car_local.hit_front, car_local.hit_left,
-                                      car_local.hit_right, car_local.hit_rear);
+                 car_.hit_front, car_.hit_left, car_.hit_right, car_.hit_rear);
+      mvprintw(row++, 2, "Eyes (left, right): %d %d", car_.eye_l, car_.eye_r);
       row++;
 
       attron(A_BOLD | A_UNDERLINE);
@@ -211,172 +371,50 @@ void* function_output_screen (void* p) {
       mvprintw(row++, 2, "%s", "off");
       row++;
 
-      if (conn_error) {
-        attron(COLOR_PAIR(2));
-        mvprintw(row++, 2, "NOT CONNECTED");
-        attroff(COLOR_PAIR(2));
-        row++;
-      }
-
       i++;
       refresh();
-      usleep(100000);
+      usleep(100000); // 0.1 second
   }
   return NULL;
 }
 
-
-/*
-void* function_tx (void* p) {
-
-  while(1) {
-
-    pthread_mutex_lock(&car_mutex);
-    car_t car_local = car;
-    pthread_mutex_unlock(&car_mutex);
-
-    int count = 1;
-
-    char array[6] = {0, 0, 0, 0, 0, 0};
-    // steering byte
-    array[0] = car_local.steering;
-    // engine power byte
-    array[1] = car_local.speed;
-    if (car_local.forward == false)
-      array[1] = -array[1];
-    // echo ECM byte
-    array[2] = 0;
-    // echo BCM byte
-    array[3] = 0;
-    // command byte
-    array[4] = 0;
-    array[4] = array[4] |  car_local.light_r;
-    array[4] = array[4] | (car_local.light_c << 1);
-    array[4] = array[4] | (car_local.light_l << 2);
-    array[4] = array[4] | (car_local.breaking << 3);
-    // end
-    array[5] = '\n';
-
-    write(fd, array, 6);  // send data
-    usleep(1000000); // wait 1 sec
-  }
-
-  return 0;
-}
-*/
-
-void* function_rx (void* p) {
-
-  char buffer[10];
-  char array[10];
+void* function_comm (void* p) {
+  char buffer_tx[10];
+  char buffer_rx[10];
 
   while(1) {
-    array[0] = 0xBC;
-    write(fd, array, 1);  // send data
-
-    char r = 0;
-    int status = 0;
-    while (true) {
-      int num = read(fd, buffer, 2);
-      if (num == -1) 
-        continue;
-      if (num == 0)
-        continue;
-      r = buffer[0];
-//      printf("TEST %d %d\n", num, buffer[0]);
-      status = 1;
-      break;
+    for (int i = 0; i < sizeof(cmds)/sizeof(cmd_t); i++) {
+      unsigned long int iters = 0;
+      // send command
+      buffer_tx[0] = cmds[i].code;
+      // collect additional data
+      if (cmds[i].tx_f != NULL && cmds[i].n_tx_bytes > 0)
+          cmds[i].tx_f(&buffer_tx[1]);
+      // send data
+      write(fd, buffer_tx, 1+cmds[i].n_tx_bytes);
+      // receive response
+      if (cmds[i].n_rx_bytes > 0) {
+        int tot = 0;
+        while (true) {
+          iters++;
+          if (iters > 10000)
+             break;
+          int num = read(fd, &buffer_rx[tot], cmds[i].n_rx_bytes+1-tot);
+          if (num == -1)
+            continue;
+          tot += num;
+          if (tot == (cmds[i].n_rx_bytes+1))
+            break;
+        }
+        // use response
+        if (buffer_rx[cmds[i].n_rx_bytes] == '\n' && cmds[i].rx_f != NULL)
+          cmds[i].rx_f(buffer_rx);
+      }
+      usleep(1000); // wait 1 ms between two consecutive tx
     }
-
-    conn_error = false;
-
-    pthread_mutex_lock(&car_mutex);
-    car.hit_front =   r & 0x01;
-    car.hit_left =   (r & 0x02) ? 1 : 0;
-    car.hit_right =  (r & 0x04) ? 1 : 0;
-    car.hit_rear =   (r & 0x08) ? 1 : 0;
-    car.light_sens = (r & 0x10) ? 1 : 0;
-    pthread_mutex_unlock(&car_mutex);
-    usleep(1000000); // wait 1 sec
+    usleep(100000); // wait 100 ms between two consecutive burst
   }
 
   return 0;
-}
-
-
-bool init_hw (const char* filename) {
-  fd = open(filename, O_RDWR | O_NOCTTY | O_NONBLOCK);
-  if(fd == -1)
-    return false;
-  return true;
-}
-
-
-int main(int argc, char* argv[]) {
-  WINDOW *w;
-  
-  if (argc == 1)
-    return -1;  
-
-  memset(&car, 0, sizeof(car_t));
-  w = init_window();
-
-  conn_error = init_hw(argv[1]);
-
-  pthread_create(&thread_input,  NULL, function_input_reader, (void*)w);
-  pthread_create(&thread_screen, NULL, function_output_screen, (void*)w);
-//  pthread_create(&thread_tx,     NULL, function_tx, NULL);
-  pthread_create(&thread_rx,     NULL, function_rx, NULL);
-
-  pthread_join(thread_input, NULL);
-  pthread_join(thread_screen, NULL);
-//  pthread_join(thread_tx, NULL);
-  pthread_join(thread_rx, NULL);
-
-  close_window();
-
-  return 0;
-}
-
-
-WINDOW* init_window () {
-  WINDOW* w;
-
-  initscr();     // Start curses mode
-  clear();       // Clear windows
-  cbreak();      // No buffer data but handle signals - raw otherwise
-  noecho();      // No character echo
-  start_color(); // Start colors
-
-/*
-  COLOR_BLACK   0
-  COLOR_RED     1
-  COLOR_GREEN   2
-  COLOR_YELLOW  3
-  COLOR_BLUE    4
-  COLOR_MAGENTA 5
-  COLOR_CYAN    6
-  COLOR_WHITE   7
-  init_color(COLOR_RED, 700, 0, 0);
-    // param 1     : color name
-    // param 2, 3, 4 : rgb content min = 0, max = 1000
-*/
-  init_pair(1, COLOR_RED, COLOR_WHITE);
-  init_pair(2, COLOR_BLUE, COLOR_BLACK);
-
-  getmaxyx(stdscr, row, col);
-
-  w = newwin(col, row, 0, 0);
-  keypad(w, TRUE);  // Enable Fx and keys
-
-  refresh();     // Clear windows
-
-  return w;
-}
-
-void close_window() {
-  clrtoeol();
-  refresh();
-  endwin();
 }
 
