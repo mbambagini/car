@@ -1,0 +1,93 @@
+/*****************************************************************************
+ * 1. Can specs
+ *****************************************************************************/
+
+/*****************************************************************************
+ * 1.1 Nodes
+ *****************************************************************************/
+BCM: Body Control Manager
+ECM: Engine Control Manager
+GCM: Gateway & Communication Manager
+
+/*****************************************************************************
+ * 1.2 Messages
+ *****************************************************************************/
+
+Message: COMMAND_BODY
+CAN ID: 0xAA
+Sender: GCM
+Receiver: BCM
+Type: Periodic
+Period (ms):
+Size (bytes): 1
+Structure:
+BYTE 0: XXXXX123
+             ||| light on the right
+             ||  light in the center
+             |   light on the left
+
+Message: STATUS BODY
+CAN ID: 0xAB
+Sender: BCM
+Receiver: GCM
+Type: Periodic
+Period (ms): 
+Size (bytes): 4
+Structure:
+ MSB                             LSB
+ XXXXXXXX 11111111 22222222 XXX34567
+           right     left      ||||| front hit sensor
+            eye       eye      |||| rear hit sensor
+           (cm)      (cm)      ||| left hit sensor
+                               || right hit sensor
+                               | light sensor (1: bright, 0: dark)
+
+Message: COMMAND ENGINE
+CAN ID: 0x0A
+Sender: GCM
+Receiver: ECM
+Type: Periodic
+Period (ms): 
+Size (bytes): 4
+Structure:
+MSB                             LSB
+XXXXXXXX XXXXXX43 22222222 11111111
+               ||  engine  steering
+               || [0, 100] [0,100]
+               ||
+               || direction (1: forward, 0: backward)
+               | breaking (1: ON, 0: OFF)
+
+Message: TIME UPDATE
+CAN ID: 0xBB
+Sender: GCM
+Receiver: BCM
+Type: Sporadic
+Period (ms): ---
+Size (bytes): 8
+Structure: Unix timestamp
+
+Message: COMMAND DIAGNOSIS
+CAN ID: 0x11
+Sender: GCM
+Receiver: BCM/ECM
+Type: Sporadic
+Period (ms): ---
+Size (bytes): 8
+Structure:
+MSB LSB
+33333333 33333333 33333333 33333333 22222222 22222222 11111111 11111111
+      Data                               Options           Command
+
+Message: STATUS DIAGNOSIS
+CAN ID: 0x10
+Sender: BCM/ECM
+Receiver: GCM
+Type: Sporadic
+Period (ms): ---
+Size (bytes): 4 
+Structure:
+MSB                             LSB
+11111111 11111111 11111111 11111111
+                Data
+
