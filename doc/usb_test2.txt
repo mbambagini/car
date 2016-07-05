@@ -1,0 +1,34 @@
+PC sends the commands (and eventually data) and the GCM replies.
+GCM does not start the communication.
+
+Messages:
+1) Status BCM
+   PC sends: 0x10
+   GCM replies: 1 byte
+      7 6 5            4        3         2        1         0
+      X X X light_sensor hit_rear hit_right hit_left hit_front
+
+2) Right eye
+   PC sends: 0x11
+   GCM replies: 1 byte (cm)
+
+3) Left eye
+   PC sends: 0x12
+   GCM replies: 1 byte (cm)
+
+4) BCM command
+   PC sends: 0x13 + data
+   GCM replies: ---
+                     7 6 5 4          3            2           1       0
+      data (1 byte): X X X X light_left light_center light_right braking
+
+5) ECM steering
+   PC sends: 0x20 + data
+   GCM replies: ---
+   data: 1 byte [-100, +100]
+
+6) ECM engine
+   PC sends: 0x21 + data
+   GCM replies: ---
+   data: 1 byte [-100, +100]
+
